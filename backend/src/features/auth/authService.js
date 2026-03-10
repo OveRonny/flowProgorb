@@ -21,7 +21,6 @@ export async function registerUser({ email, password }) {
 }
 
 export async function loginUser({ email, password }) {
-
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) throw new Error('Invalid email or password');
 
