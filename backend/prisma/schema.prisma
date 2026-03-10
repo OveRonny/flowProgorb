@@ -1,0 +1,79 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id    Int    @id @default(autoincrement())
+  email String @unique
+  password  String
+  projects  Project[]
+}
+
+model Project {
+  id          Int    @id @default(autoincrement())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      Int
+  name        String
+  description String?
+  modules     Module[]
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, name])
+}
+
+model Module {
+  id          Int    @id @default(autoincrement())
+  project     Project   @relation(fields: [projectId], references: [id])
+  projectId   Int
+  name        String
+  description String?
+  orderIndex  Int
+  features    Feature[]
+
+  @@unique([projectId, orderIndex])
+}
+
+model Feature {
+  id          Int    @id @default(autoincrement())
+  module      Module   @relation(fields: [moduleId], references: [id])
+  moduleId    Int
+  name        String
+  description String?
+  status      FeatureStatus @default(PLANNED)
+  tasks       Task[]
+}
+
+model Task {
+  id           Int    @id @default(autoincrement())
+  feature      Feature  @relation(fields: [featureId], references: [id])
+  featureId    Int
+  title        String
+  description  String?
+  status       TaskStatus   @default(PENDING)
+  estimatedHours Int?
+  completedAt  DateTime?
+
+  @@index([featureId, status])
+}
+
+enum FeatureStatus {
+  PLANNED
+  IN_PROGRESS
+  DONE
+}
+
+enum TaskStatus {
+  PENDING
+  COMPLETED
+}
