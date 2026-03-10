@@ -1,6 +1,14 @@
 import express from 'express';
-import { getAllModulesController, getModuleByIdController, createModuleController, updateModuleController, deleteModuleController } from './moduleController';
-import { authMiddleware } from '../auth/authMiddleware.js'
+import {
+    getAllModulesController,
+    getModuleByIdController,
+    createModuleController,
+    updateModuleController,
+    deleteModuleController
+} from './moduleController.js';
+import {
+    authMiddleware
+} from '../auth/authMiddleware.js'
 
 const router = express.Router();
 

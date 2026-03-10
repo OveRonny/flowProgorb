@@ -4,7 +4,13 @@ import {
 import {
     parseId
 } from '../helpers/validators.js';
-import { getAllModulesService, getModuleByIdService, createModuleService, updateModuleService, deleteModuleService } from './moduleService.js';
+import {
+    getAllModulesService,
+    getModuleByIdService,
+    createModuleService,
+    updateModuleService,
+    deleteModuleService
+} from './moduleService.js';
 
 export const getAllModulesController = handleAsync(async (req, res) => {
     const modules = await getAllModulesService();
@@ -15,7 +21,9 @@ export const getModuleByIdController = handleAsync(async (req, res) => {
     const id = parseId(req.params.id);
     const module = await getModuleByIdService(id);
     if (!module) {
-        return res.status(404).json({ error: 'Module not found' });
+        return res.status(404).json({
+            error: 'Module not found'
+        });
     }
     res.json(module);
 });
@@ -26,14 +34,14 @@ export const createModuleController = handleAsync(async (req, res) => {
     res.status(201).json(newModule);
 });
 
-export const updateModuleController = handleAsync( async (req, res) => {
+export const updateModuleController = handleAsync(async (req, res) => {
     const id = parseId(req.params.id);
-    const data = req.body;  
-    const updateModule = await updateModuleService(id, data);    
+    const data = req.body;
+    const updateModule = await updateModuleService(id, data);
     res.status(201).json(updateModule);
 });
 
-export const deleteModuleController = handleAsync( async (req, res) => {
+export const deleteModuleController = handleAsync(async (req, res) => {
     const id = parseId(req.params.id);
     await deleteModuleService(id);
     res.status(204).send();
