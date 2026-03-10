@@ -31,8 +31,7 @@ export async function createProjectService(data) {
     }
 }
 
-export async function updateProjectService(id, data) {
-     console.log(data)
+export async function updateProjectService(id, data) {    
     return prisma.project.update({
         where: {
             id
