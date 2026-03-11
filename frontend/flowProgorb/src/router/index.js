@@ -6,6 +6,7 @@ import LoginView from "../features/auth/views/LoginPage.vue"
 import RegisterPage from '../features/auth/views/RegisterPage.vue'
 import DashboardPage from '../features/dashboard/views/Dashboard.vue'
 import ProjectPage from "../features/projects/views/ProjectPage.vue"
+import CreateProject from "../features/projects/views/CreateProject.vue"
 
 
 const routes = [{
@@ -31,6 +32,14 @@ const routes = [{
     path: '/project',
     component: ProjectPage,
     name: 'Project',
+    meta: {
+      requiresAuth: true
+    },
+  },
+   {
+    path: '/createproject',
+    component: CreateProject,
+    name: 'createProject',
     meta: {
       requiresAuth: true
     },

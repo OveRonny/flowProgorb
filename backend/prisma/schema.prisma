@@ -13,31 +13,34 @@ datasource db {
 }
 
 model User {
-  id    Int    @id @default(autoincrement())
-  email String @unique
-  password  String
-  projects  Project[]
+  id       Int       @id @default(autoincrement())
+  email    String    @unique
+  password String
+  projects Project[]
 }
 
 model Project {
-  id          Int      @id @default(autoincrement())
-  user        User     @relation(fields: [userId], references: [id])
+  id          Int     @id @default(autoincrement())
+  user        User    @relation(fields: [userId], references: [id])
   userId      Int
   name        String
-  description String? 
-  
-  githubRepoUrl String?   
-  githubRepoId  Int?      
-  githubDefaultBranch String? 
+  description String?
 
-  status      ProjectStatus @default(PLANNED)
-  progress    Int      @default(0)
-  deadline    DateTime?
-  priority    Int?
-  tags        String[]
-  modules     Module[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  githubRepoUrl       String?
+  githubRepoId        Int?
+  githubDefaultBranch String?
+  features            Feature[]
+  status              ProjectStatus   @default(PLANNED)
+  progress            Int             @default(0)
+  deadline            DateTime?
+  priority            Int?
+  tags                String[]
+  modules             ProjectModule[]
+  languages   ProgrammingLanguage[] @relation("ProjectLanguages")
+  frameworks  Framework[]           @relation("ProjectFrameworks")
+  libraries   Library[]             @relation("ProjectLibraries")
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
 
   @@unique([userId, name])
 }
@@ -50,30 +53,45 @@ enum ProjectStatus {
 }
 
 model Module {
-  id          Int    @id @default(autoincrement())
-  project     Project   @relation(fields: [projectId], references: [id])
-  projectId   Int
-  name        String
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
   description String?
-  orderIndex  Int
-  features    Feature[]
 
-  @@unique([projectId, orderIndex])
+  projectModules ProjectModule[]
+  features       Feature[]
+}
+
+model ProjectModule {
+  id Int @id @default(autoincrement())
+
+  project   Project @relation(fields: [projectId], references: [id])
+  projectId Int
+
+  module   Module @relation(fields: [moduleId], references: [id])
+  moduleId Int
+
+  orderIndex Int?
+
+  @@unique([projectId, moduleId])
 }
 
 model Feature {
-  id          Int           @id @default(autoincrement())
-  module      Module        @relation(fields: [moduleId], references: [id])
-  moduleId    Int
-  name        String
-  description String?
-  status      FeatureStatus @default(PLANNED)
- 
-  githubIssueId Int?       
-  githubIssueUrl String?   
-  githubIssueState String? 
+  id               Int           @id @default(autoincrement())
+  module           Module        @relation(fields: [moduleId], references: [id])
+  moduleId         Int
+  project          Project       @relation(fields: [projectId], references: [id])
+  projectId        Int
+  name             String
+  description      String?
+  status           FeatureStatus @default(PLANNED)
+  progress         Int           @default(0)
+  githubIssueId    Int?
+  githubIssueUrl   String?
+  githubIssueState String?
+  orderIndex       Int?
+  tasks            Task[]
 
-  tasks       Task[]
+  @@unique([projectId, moduleId, name])
 }
 
 enum FeatureStatus {
@@ -83,21 +101,42 @@ enum FeatureStatus {
 }
 
 model Task {
-  id            Int        @id @default(autoincrement())
-  feature       Feature    @relation(fields: [featureId], references: [id])
-  featureId     Int
-  title         String
-  description   String?
-  status        TaskStatus @default(PENDING)
+  id             Int        @id @default(autoincrement())
+  feature        Feature    @relation(fields: [featureId], references: [id])
+  featureId      Int
+  title          String
+  description    String?
+  status         TaskStatus @default(PENDING)
   estimatedHours Int?
-  completedAt   DateTime?
-  
-  githubCommentId Int?     
-  githubPRId      Int?     
-  githubUrl       String?   
+  completedAt    DateTime?
+
+  githubCommentId Int?
+  githubPRId      Int?
+  githubUrl       String?
+  orderIndex      Int?
+
+  @@unique([featureId, title])
 }
 
 enum TaskStatus {
   PENDING
   COMPLETED
+}
+
+model ProgrammingLanguage {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  projects  Project[] @relation("ProjectLanguages")
+}
+
+model Framework {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  projects  Project[] @relation("ProjectFrameworks")
+}
+
+model Library {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  projects  Project[] @relation("ProjectLibraries")
 }

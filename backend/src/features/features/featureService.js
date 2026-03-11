@@ -31,7 +31,7 @@ export async function createfeatureService(data) {
     });
 }
 
-const FEATURE_STATUSES = ['PLANNED', 'ACTIVE', 'COMPLETED', 'ON_HOLD']
+const FEATURE_STATUSES = ['PLANNED', 'IN_PROGRESS', 'DONE']
 
 export async function updatefeatureService(featureId, data) { 
   if (data.status && !FEATURE_STATUSES.includes(data.status)) {

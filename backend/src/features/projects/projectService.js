@@ -16,24 +16,72 @@ export async function getProjectByIdService(id) {
 
 export async function createProjectService(data) {
   try {
+    const {
+      name,
+      description,
+      userId,
+      status,
+      progress,
+      deadline,
+      priority,
+      tags,
+      githubRepoUrl,
+      githubRepoId,
+      githubDefaultBranch,
+      moduleIds = [],
+      languageIds = [],
+      frameworkIds = [],
+      libraryIds = []
+    } = data
+
     const newProject = await prisma.project.create({
       data: {
-        name: data.name,
-        description: data.description ?? null,
-        userId: data.userId,
-        status: data.status ?? 'PLANNED',           // default enum
-        progress: data.progress ?? 0,               // default 0
-        deadline: data.deadline ? new Date(data.deadline) : null,
-        priority: data.priority ?? null,
-        tags: data.tags ?? [],
-        githubRepoUrl: data.githubRepoUrl ?? null,
-        githubRepoId: data.githubRepoId ?? null,
-        githubDefaultBranch: data.githubDefaultBranch ?? null
-      }
+        name,
+        description: description ?? null,
+        userId,
+        status: status ?? 'PLANNED',
+        progress: progress ?? 0,
+        deadline: deadline ? new Date(deadline) : null,
+        priority: priority ?? null,
+        tags: tags ?? [],
+        githubRepoUrl: githubRepoUrl ?? null,
+        githubRepoId: githubRepoId ?? null,
+        githubDefaultBranch: githubDefaultBranch ?? null,
+
+        // --- Koble moduler ---
+        modules: {
+          create: moduleIds.map((moduleId, index) => ({
+            module: { connect: { id: moduleId } },
+            orderIndex: index + 1,
+          })),
+        },
+
+        // --- Koble programmeringsspråk ---
+        languages: {
+          connect: languageIds.map(id => ({ id })),
+        },
+
+        // --- Koble rammeverk ---
+        frameworks: {
+          connect: frameworkIds.map(id => ({ id })),
+        },
+
+        // --- Koble biblioteker ---
+        libraries: {
+          connect: libraryIds.map(id => ({ id })),
+        },
+      },
+      include: {
+        modules: { include: { module: true } },
+        languages: true,
+        frameworks: true,
+        libraries: true,
+      },
     })
 
     return newProject
   } catch (error) {
+    console.error('Feil ved opprettelse av prosjekt:', error)
     throw new Error(error.message)
   }
 }

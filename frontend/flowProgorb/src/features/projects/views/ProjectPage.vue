@@ -7,8 +7,7 @@
 
     <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
       <SearchBar v-model="searchQuery" placeholder="Søk prosjekter..." />
-    </div>
-    <p class="text-gray-300 mt-2">Du søker etter: {{ searchQuery }}</p>
+    </div>    
 
     <button @click="showModal = true" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded mb-4">
       Nytt prosjekt
