@@ -21,8 +21,11 @@ export const getProjectByIdController = handleAsync(async (req, res) => {
 });
 
 export const createProjectController = handleAsync(async (req, res) => {
-    const data = req.body;
-    const newProject = await createProjectService(data);
+    const data = req.body;    
+    const newProject = await createProjectService({
+        ...data,
+        userId: req.user.userId
+    });   
     res.status(201).json(newProject);
 });
 

@@ -6,7 +6,10 @@ export async function registerUser({ email, password }) {
 
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
-    throw new Error('User already exists'); }
+    const err = new Error('User already exists');
+    err.status = 409;
+    throw err;
+  }
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -17,7 +20,13 @@ export async function registerUser({ email, password }) {
     },
   });
 
-  return user;
+  const token = jwt.sign(
+    { userId: user.id, email: user.email },
+    process.env.JWT_SECRET || 'supersecret',
+    { expiresIn: '1h' }
+  );
+
+  return { token, user: { id: user.id, email: user.email } };
 }
 
 export async function loginUser({ email, password }) {

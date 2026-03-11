@@ -1,7 +1,11 @@
 <template>
   <div class="min-h-screen bg-gray-950 flex items-center justify-center px-4">
     <h1>Register</h1>
-    <RegisterForm @submit="handleRegister" />
+    <RegisterForm
+      :loading="useStore.loading"
+      :error="useStore.error"
+      @submit="handleRegister"
+    />
   </div>
 </template>
 
@@ -23,7 +27,7 @@ async function handleRegister(credentials) {
     }
 
   } catch (err) {
-    console.error("Login failed:", err)
+    console.error("Registration failed:", err)
   }
 }
 </script>

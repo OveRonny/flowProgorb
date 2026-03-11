@@ -16,13 +16,13 @@ export const useAuthStore = defineStore('auth', {
             this.loading = true
             this.error = null
             try {
-                const data = await loginUser(credentials)
+                const data = await login(credentials)
                 this.user = data.user
                 this.token = data.token
                 this.email = data.email
                 localStorage.setItem('token', data.token)
             } catch (err) {
-                this.error = err.response?.data?.message || 'Login failed'
+                this.error = err.response?.data?.message || err.response?.data?.error || 'Login failed'
             } finally {
                 this.loading = false
             }
@@ -32,13 +32,13 @@ export const useAuthStore = defineStore('auth', {
             this.loading = true
             this.error = null
             try {
-                const data = await registerUser(userData)
+                const data = await register(userData)
                 this.user = data.user
                 this.token = data.token
                 this.email = data.user.email
                 localStorage.setItem('token', data.token)
             } catch (err) {
-                this.error = err.response?.data?.message || 'Registration failed'
+                this.error = err.response?.data?.message || err.response?.data?.error || 'Registration failed'
             } finally {
                 this.loading = false
             }

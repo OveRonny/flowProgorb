@@ -5,13 +5,13 @@ export async function register(req, res) {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password required' });
-  }
-    const user = await registerUser({ email, password });
-    res.status(201).json({ id: user.id, email: user.email });
+      return res.status(400).json({ message: 'Email and password required' });
+    }
+    const { token, user } = await registerUser({ email, password });
+    res.status(201).json({ token, user });
   } catch (error) {
     console.error("Error in registerUser:", error);
-    res.status(400).json({ error: error.message });
+    res.status(error.status || 400).json({ message: error.message });
   }
 }
 
@@ -24,7 +24,7 @@ export async function login(req, res) {
 
     res.status(200).json({ token, user });   
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    res.status(error.status || 400).json({ message: error.message });
     
   }
 }
