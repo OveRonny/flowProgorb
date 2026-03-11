@@ -19,26 +19,41 @@ export async function createfeatureService(data) {
         data: {
             name: data.name,
             description: data.description,
-            moduleId: data.moduleId
+            moduleId: data.moduleId,
+            status: data.status ?? 'PLANNED',
+            progress: data.progress ?? 0,
+            priority: data.priority ?? null,
+            deadline: data.deadline ? new Date(data.deadline) : null,
+            githubIssueId: data.githubIssueId ?? null,
+            githubIssueUrl: data.githubIssueUrl ?? null,
+            githubIssueState: data.githubIssueState ?? null
         }
     });
 }
 
-export async function updatefeatureService(id, data) {
-    return prisma.feature.update({
-        where: {    
-            id
-        },
-        data: {
-            name: data.name,
-            description: data.description
-        },  
-        select: {
-            id: true,
-            name: true,
-            description: true
-        }
-    });
+const FEATURE_STATUSES = ['PLANNED', 'ACTIVE', 'COMPLETED', 'ON_HOLD']
+
+export async function updatefeatureService(featureId, data) { 
+  if (data.status && !FEATURE_STATUSES.includes(data.status)) {
+    throw new Error(
+      `Ugyldig status: ${data.status}. Gyldige verdier: ${FEATURE_STATUSES.join(', ')}`
+    )
+  }
+
+  return prisma.feature.update({
+    where: { id: featureId },
+    data: {
+      name: data.name,
+      description: data.description,
+      status: data.status, 
+      progress: data.progress,
+      deadline: data.deadline ? new Date(data.deadline) : undefined,
+      priority: data.priority,
+      githubIssueId: data.githubIssueId,
+      githubIssueUrl: data.githubIssueUrl,
+      githubIssueState: data.githubIssueState
+    }
+  })
 }
 
 export async function deletefeatureService(id) {

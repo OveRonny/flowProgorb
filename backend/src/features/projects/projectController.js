@@ -7,6 +7,7 @@ import {
 import { getAllProjectsService, getProjectByIdService, createProjectService, updateProjectService, deleteProjectService } from './projectService.js'
 
 export const getAllProjectsController = handleAsync(async (req, res) => {
+    
     const projects = await getAllProjectsService();
     res.json(projects);
 });

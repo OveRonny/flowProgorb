@@ -1,50 +1,42 @@
 <template>
-    <div class="w-full max-w-md bg-gray-900 p-8 rounded-2xl shadow-xl border border-gray-800">
-        <h2 class="text-2xl font-bold text-white text-center mb-6">
-            Nytt prosjekt
-        </h2>
-
-         <form @submit.prevent="handleSubmit" class="space-y-4">
-
-      <input v-model="name" type="text" placeholder="Prosjekt navn" required
-        class="w-full px-4 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-
-      <input v-model="description" type="text" placeholder="Beskrivelse" required
-        class="w-full px-4 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-
-      <button type="submit" :disabled="loading"
-        class="w-full py-2 rounded-lg bg-blue-600 hover:bg-blue-700 transition text-white font-semibold disabled:opacity-50">
-        {{ loading ? "Lagrer..." : "Lagre" }}
-      </button>
-
-      <p v-if="error" class="text-red-500 text-sm text-center">
-        {{ error }}
-      </p>
-
-    </form>
-
-    </div>
-
+  <form @submit.prevent="submitForm" class="flex flex-col gap-4">
+    <input
+      v-model="name"
+      type="text"
+      placeholder="Prosjektnavn"
+      class="border rounded px-4 py-2 dark:bg-gray-700 dark:text-gray-100"
+      required
+    />
+    <textarea
+      v-model="description"
+      placeholder="Beskrivelse"
+      class="border rounded px-4 py-2 dark:bg-gray-700 dark:text-gray-100"
+      required
+    ></textarea>
+    <input
+    v-model="deadline"
+    type="date"
+    class="border rounded px-4 py-2 dark:bg-gray-700 dark:text-gray-100"
+  />
+    <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+      Legg til prosjekt
+    </button>
+  </form>
 </template>
 
 <script setup>
-import { ref } from "vue"
-
-defineProps({
-    loading: { type: Boolean, default: false },
-    error: { type: String, default: "" },
-})
+import { ref } from 'vue'
 
 const emit = defineEmits(["submit"])
 
-const name = ref("")
-const description = ref("")
+const name = ref('')
+const description = ref('')
+const deadline = ref('')
 
-function handleSubmit() {
-    emit("submit", {
-        name: name.value,
-        description: description.value
-    })
+function submitForm() {
+   const deadlineDate = deadline.value ? new Date(deadline.value) : null
+  emit('submit', { name: name.value, description: description.value, deadline: deadlineDate })
+  name.value = ''
+  description.value = ''
 }
-
 </script>

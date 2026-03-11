@@ -38,3 +38,4 @@ export const deleteFeatureController = handleAsync( async (req, res) => {
     await deletefeatureService(id);
     res.status(204).send();
 });
+
