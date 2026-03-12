@@ -7,11 +7,13 @@ import {
     getTechnologyByIdController,
     createTechnologyController,
     updateTechnologyController,
-    deleteTechnologyController
+    deleteTechnologyController,
+    getTechnologyTypesController
 } from './controller.js'
 
 const router = express.Router();
 
+router.get('/types', authMiddleware, getTechnologyTypesController);
 router.post('/', authMiddleware, createTechnologyController);
 router.get('/', authMiddleware, getAllTechnologiesController);
 router.get('/:id', authMiddleware, getTechnologyByIdController);

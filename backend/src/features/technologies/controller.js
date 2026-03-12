@@ -10,7 +10,8 @@ import {
     getTechnologyByIdService,
     createTechnologyService,
     updateTechnologyService,
-    deleteTechnologyService
+    deleteTechnologyService,
+    getTechnologyTypesService
 } from './service.js';
 
 export const getAllTechnologiesController = handleAsync(async (req, res) => {
@@ -44,4 +45,9 @@ export const deleteTechnologyController = handleAsync(async (req, res) => {
     const id = parseId(req.params.id);
     await deleteTechnologyService(id);
     res.status(204).send();
+});
+
+export const getTechnologyTypesController = handleAsync(async (req, res) => {
+    const types = getTechnologyTypesService();
+    res.json(types);
 });

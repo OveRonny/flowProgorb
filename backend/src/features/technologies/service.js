@@ -53,3 +53,10 @@ export async function deleteTechnologyService(id) {
         }
     });
 }
+
+export function getTechnologyTypesService() {
+ return Object.values(TechnologyType).map(type => ({
+    label: type,
+    value: type
+  }))
+}
