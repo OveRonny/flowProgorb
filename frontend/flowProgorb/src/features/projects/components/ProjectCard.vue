@@ -1,5 +1,5 @@
 <template>
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-5 hover:shadow-lg transition cursor-pointer relative">
+    <div @click="$emit('click')" class="bg-white dark:bg-gray-800 rounded-lg shadow p-5 hover:shadow-lg transition cursor-pointer relative">
         <!-- Project Title -->
         <div class="bg-gray-800 rounded-lg p-5 shadow">
 
@@ -27,7 +27,7 @@
         </div>
 
         <p class="mt-2 text-gray-700 dark:text-gray-300">{{ project.progress ?? 0 }}% ferdig</p>
-        <button @click="$emit('delete', project.id)"
+        <button @click.stop="$emit('delete', project.id)"
             class="absolute top-2 right-2 text-red-500 hover:text-red-700 dark:hover:text-red-400">
             🗑️
         </button>
@@ -50,5 +50,5 @@ defineProps({
         })
     }
 })
-defineEmits(['delete'])
+defineEmits(['click', 'delete'])
 </script>

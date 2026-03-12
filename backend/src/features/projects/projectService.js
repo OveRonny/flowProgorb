@@ -7,11 +7,21 @@ export async function getAllProjectsService() {
 }
 
 export async function getProjectByIdService(id) {
-    return prisma.project.findUnique({
-        where: {
-            id
+  return prisma.project.findUnique({
+    where: { id },
+    include: {
+      modules: {                 // ProjectModule
+        include: {
+          module: true           // selve Module-data
         }
-    });
+      },
+      features: {                // Features
+        include: {
+          technologies: true     // og teknologier
+        }
+      }
+    }
+  })
 }
 
 export async function createProjectService(data) {
@@ -27,12 +37,8 @@ export async function createProjectService(data) {
       tags,
       githubRepoUrl,
       githubRepoId,
-      githubDefaultBranch,
-      moduleIds = [],
-      languageIds = [],
-      frameworkIds = [],
-      libraryIds = []
-    } = data
+      githubDefaultBranch
+    } = data;
 
     const newProject = await prisma.project.create({
       data: {
@@ -46,48 +52,18 @@ export async function createProjectService(data) {
         tags: tags ?? [],
         githubRepoUrl: githubRepoUrl ?? null,
         githubRepoId: githubRepoId ?? null,
-        githubDefaultBranch: githubDefaultBranch ?? null,
+        githubDefaultBranch: githubDefaultBranch ?? null       
+      }
+    });
 
-        // --- Koble moduler ---
-        modules: {
-          create: moduleIds.map((moduleId, index) => ({
-            module: { connect: { id: moduleId } },
-            orderIndex: index + 1,
-          })),
-        },
-
-        // --- Koble programmeringsspråk ---
-        languages: {
-          connect: languageIds.map(id => ({ id })),
-        },
-
-        // --- Koble rammeverk ---
-        frameworks: {
-          connect: frameworkIds.map(id => ({ id })),
-        },
-
-        // --- Koble biblioteker ---
-        libraries: {
-          connect: libraryIds.map(id => ({ id })),
-        },
-      },
-      include: {
-        modules: { include: { module: true } },
-        languages: true,
-        frameworks: true,
-        libraries: true,
-      },
-    })
-
-    return newProject
+    return newProject;
   } catch (error) {
-    console.error('Feil ved opprettelse av prosjekt:', error)
-    throw new Error(error.message)
+    console.error('Feil ved opprettelse av prosjekt:', error);
+    throw new Error(error.message);
   }
 }
 
-export async function updateProjectService(id, data) {
-  // Valider enum status hvis sendt
+export async function updateProjectService(id, data) {  
   const PROJECT_STATUSES = ['PLANNED', 'ACTIVE', 'COMPLETED', 'ON_HOLD']
   if (data.status && !PROJECT_STATUSES.includes(data.status)) {
     throw new Error(

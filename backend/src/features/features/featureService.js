@@ -1,51 +1,59 @@
-import {
-    prisma
-} from '../prisma/client.js';
+import { prisma } from '../prisma/client.js';
 
-export async function getAllfeaturesService() {
-    return prisma.feature.findMany({});
+const FEATURE_STATUSES = ['PLANNED', 'IN_PROGRESS', 'DONE'];
+
+export async function getAllFeaturesService(projectId) {
+  return prisma.feature.findMany({
+    where: { projectId },
+    include: { technologies: true, tasks: true }
+  });
 }
 
-export async function getfeatureByIdService(id) {
-    return prisma.feature.findUnique({
-        where: {
-            id
-        }
-    });
+export async function getFeatureByIdService(projectId, featureId) {
+  return prisma.feature.findFirst({
+    where: {
+      id: featureId,
+      projectId
+    },
+    include: { technologies: true, tasks: true }
+  });
 }
 
-export async function createfeatureService(data) {
-    return prisma.feature.create({
-        data: {
-            name: data.name,
-            description: data.description,
-            moduleId: data.moduleId,
-            status: data.status ?? 'PLANNED',
-            progress: data.progress ?? 0,
-            priority: data.priority ?? null,
-            deadline: data.deadline ? new Date(data.deadline) : null,
-            githubIssueId: data.githubIssueId ?? null,
-            githubIssueUrl: data.githubIssueUrl ?? null,
-            githubIssueState: data.githubIssueState ?? null
-        }
-    });
+export async function createFeatureService(projectId, data) {
+  const { moduleId, name, description, technologyIds } = data;
+
+  return prisma.feature.create({
+    data: {
+      projectId,
+      moduleId,
+      name,
+      description: description ?? null,
+      technologies: technologyIds
+        ? { connect: technologyIds.map(id => ({ id })) }
+        : undefined,
+      status: 'PLANNED',
+      progress: 0
+    },
+    include: { technologies: true, tasks: true }
+  });
 }
 
-const FEATURE_STATUSES = ['PLANNED', 'IN_PROGRESS', 'DONE']
-
-export async function updatefeatureService(featureId, data) { 
+export async function updateFeatureService(projectId, featureId, data) {
   if (data.status && !FEATURE_STATUSES.includes(data.status)) {
     throw new Error(
       `Ugyldig status: ${data.status}. Gyldige verdier: ${FEATURE_STATUSES.join(', ')}`
-    )
+    );
   }
 
-  return prisma.feature.update({
-    where: { id: featureId },
+  return prisma.feature.updateMany({
+    where: {
+      id: featureId,
+      projectId
+    },
     data: {
       name: data.name,
       description: data.description,
-      status: data.status, 
+      status: data.status,
       progress: data.progress,
       deadline: data.deadline ? new Date(data.deadline) : undefined,
       priority: data.priority,
@@ -53,13 +61,15 @@ export async function updatefeatureService(featureId, data) {
       githubIssueUrl: data.githubIssueUrl,
       githubIssueState: data.githubIssueState
     }
-  })
+  });
 }
 
-export async function deletefeatureService(id) {
-    return prisma.feature.delete({
-        where: {
-            id
-        }
-    });
+
+export async function deleteFeatureService(projectId, featureId) {
+  return prisma.feature.deleteMany({
+    where: {
+      id: featureId,
+      projectId
+    }
+  });
 }

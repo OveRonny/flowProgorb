@@ -25,16 +25,7 @@
           Prosjekter
         </router-link>
       </li>
-     
-      <li>
-        <router-link
-          to="/settings"
-          class="hover:text-blue-500 dark:hover:text-blue-400"
-          active-class="border-b-2 border-blue-500 dark:border-blue-400"
-        >
-          Innstillinger
-        </router-link>
-      </li>
+    
     </ul>
 
     
@@ -79,13 +70,7 @@
         Prosjekter
       </router-link>
      
-      <router-link
-        to="/settings"
-        class="hover:text-blue-500 dark:hover:text-blue-400"
-        @click="isOpen=false"
-      >
-        Innstillinger
-      </router-link>
+   
     </div>
   </nav>
 </template>

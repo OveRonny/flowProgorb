@@ -1,52 +1,99 @@
-import {
-    prisma
-} from '../prisma/client.js';
+import { prisma } from '../prisma/client.js';
 
-export async function getAllTasksService() {
-    return prisma.task.findMany({});
+const TASK_STATUSES = ['PENDING', 'COMPLETED', 'IN_PROGRESS', 'BLOCKED', 'TODO', 'DONE'];
+
+// Hent alle tasks for en feature, med filter og sortering
+export async function getAllTasksService(featureId, statusFilter) {  
+  const whereClause = { featureId };
+  if (statusFilter && TASK_STATUSES.includes(statusFilter)) {
+    whereClause.status = statusFilter;
+  }
+
+  return prisma.task.findMany({
+    where: whereClause,
+    include: { feature: true }, // inkluder feature-data
+    orderBy: { orderIndex: 'asc' }
+  });
 }
 
-export async function getTaskByIdService(id) {
-    return prisma.task.findUnique({
-        where: {
-            id
-        }
-    });
+// Hent en task spesifikt
+export async function getTaskByIdService(featureId, taskId) {
+  return prisma.task.findFirst({
+    where: { id: taskId, featureId },
+    include: { feature: true }
+  });
 }
 
-export async function createTaskService(data) {
-    return prisma.task.create({
-        data: {
-            name: data.name,
-            description: data.description,
-            featureId: data.featureId,
-            status: data.status
-        }
-    });
+// Opprett ny task under en feature
+export async function createTaskService(featureId, data) {
+  const { title, description, status, estimatedHours, orderIndex } = data;
+
+  if (status && !TASK_STATUSES.includes(status)) {
+    throw new Error(
+      `Ugyldig status: ${status}. Gyldige verdier: ${TASK_STATUSES.join(', ')}`
+    );
+  }
+
+  return prisma.task.create({
+    data: {
+      featureId,
+      title,
+      description: description ?? null,
+      status: status ?? 'PENDING',
+      estimatedHours,
+      orderIndex
+    },
+    include: { feature: true }
+  });
 }
 
-export async function updateTaskService(id, data) {
-    return prisma.task.update({
-        where: {
-            id
-        },
-        data: {
-            name: data.name,
-            description: data.description,
-            status: data.status
-        },
-        select: {   
-            id: true,
-            name: true,
-            description: true
-        }
-    });
+// Oppdater en task
+export async function updateTaskService(featureId, taskId, data) {
+  if (data.status && !TASK_STATUSES.includes(data.status)) {
+    throw new Error(
+      `Ugyldig status: ${data.status}. Gyldige verdier: ${TASK_STATUSES.join(', ')}`
+    );
+  }
+
+  return prisma.task.updateMany({
+    where: { id: taskId, featureId },
+    data: {
+      title: data.title,
+      description: data.description,
+      status: data.status,
+      estimatedHours: data.estimatedHours,
+      orderIndex: data.orderIndex,
+      completedAt: data.status === 'COMPLETED' ? new Date() : null
+    }
+  });
 }
 
-export async function deleteTaskService(id) {
-    return prisma.task.delete({
-        where: {
-            id
-        }
-    });
+// Slett en task
+export async function deleteTaskService(featureId, taskId) {
+  return prisma.task.deleteMany({
+    where: { id: taskId, featureId }
+  });
+}
+
+// Kalkuler progress for en feature basert på tasks
+export async function calculateFeatureProgress(featureId) {
+  const tasks = await prisma.task.findMany({
+    where: { featureId },
+    select: { status: true }
+  });
+
+  if (tasks.length === 0) return 0;
+
+  const completedTasks = tasks.filter(t => t.status === 'COMPLETED').length;
+  const progress = Math.round((completedTasks / tasks.length) * 100);
+  return progress;
+}
+
+// Oppdater feature progress automatisk etter en task-endring
+export async function updateFeatureProgress(featureId) {
+  const progress = await calculateFeatureProgress(featureId);
+  return prisma.feature.update({
+    where: { id: featureId },
+    data: { progress }
+  });
 }

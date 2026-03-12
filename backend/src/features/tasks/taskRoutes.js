@@ -11,7 +11,7 @@ import {
 } from './taskController.js'
 
 
-const router = express.Router();
+const router = express.Router({ mergeParams: true });
 
 router.post('/', authMiddleware, createTaskController);
 router.get('/', authMiddleware, getAllTasksController);

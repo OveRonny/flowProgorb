@@ -10,7 +10,7 @@ import {
     deleteFeatureController
 } from './featureController.js'
 
-const router = express.Router();
+const router = express.Router({ mergeParams: true });
 
 router.post('/', authMiddleware, createFeatureController);
 router.get('/', authMiddleware, getAllFeaturesController);

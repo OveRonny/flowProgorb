@@ -1,5 +1,5 @@
-import { PrismaClient, TechnologyType } from "@prisma/client"
-const prisma = new PrismaClient()
+import { TechnologyType } from "@prisma/client"
+import { prisma } from "../prisma/client.js"
 
 export async function getAllTechnologiesService() {
     return prisma.technology.findMany({});
