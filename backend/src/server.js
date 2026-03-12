@@ -12,7 +12,7 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-app.use('/auth', authRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/projects', projectRoutes);
 app.use('/api/features/:featureId/tasks', taskRoutes);
 app.use('/api/modules', moduleRoutes);

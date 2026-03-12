@@ -1,0 +1,55 @@
+<template>
+    <div class="w-full max-w-md bg-gray-900 p-8 rounded-2xl shadow-xl border border-gray-800">
+        <form @submit.prevent="handleRegister" class="space-y-4">
+            <input v-model="email" type="email" placeholder="Email" required
+                class="w-full px-4 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+
+            <input v-model="password" type="password" placeholder="Password" required
+                class="w-full px-4 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+
+            <input v-model="confirmPassword" type="password" placeholder="Confirm Password" required
+                class="w-full px-4 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <button :disabled="loading"
+                class="w-full py-2 rounded-lg bg-blue-600 hover:bg-blue-700 transition text-white font-semibold disabled:opacity-50">
+                Register
+            </button>
+
+            <p v-if="error" class="text-red-500">{{ error }}</p>
+            <p v-if="passwordMismatch" class="text-red-500">Passwords do not match</p>
+        </form>
+    </div>
+</template>
+
+<script setup>
+import { ref, computed } from 'vue'
+import { useAuthStore } from '../../auth/store.js'
+
+const auth = useAuthStore()
+
+const email = ref('')
+const password = ref('')
+const confirmPassword = ref('')
+const error = ref(null)
+const loading = ref(false)
+
+const passwordMismatch = computed(() => password.value && confirmPassword.value && password.value !== confirmPassword.value)
+
+const handleRegister = async () => {
+    error.value = null
+
+    if (passwordMismatch.value) {
+        return
+    }
+
+    loading.value = true
+    try {
+        await auth.register({ email: email.value, password: password.value })
+        
+
+    } catch (err) {
+        error.value = err
+    } finally {
+        loading.value = false
+    }
+}
+</script>
