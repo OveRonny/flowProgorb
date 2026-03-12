@@ -35,10 +35,7 @@ model Project {
   deadline            DateTime?
   priority            Int?
   tags                String[]
-  modules             ProjectModule[]
-  languages   ProgrammingLanguage[] @relation("ProjectLanguages")
-  frameworks  Framework[]           @relation("ProjectFrameworks")
-  libraries   Library[]             @relation("ProjectLibraries")
+  modules             ProjectModule[] 
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
 
@@ -89,7 +86,9 @@ model Feature {
   githubIssueUrl   String?
   githubIssueState String?
   orderIndex       Int?
-  tasks            Task[]
+
+  tasks        Task[]
+  technologies Technology[]
 
   @@unique([projectId, moduleId, name])
 }
@@ -123,20 +122,18 @@ enum TaskStatus {
   COMPLETED
 }
 
-model ProgrammingLanguage {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  projects  Project[] @relation("ProjectLanguages")
+model Technology {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+  type TechnologyType
+
+  features Feature[]
 }
 
-model Framework {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  projects  Project[] @relation("ProjectFrameworks")
+enum TechnologyType {
+  LANGUAGE
+  FRAMEWORK
+  LIBRARY
 }
 
-model Library {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  projects  Project[] @relation("ProjectLibraries")
-}
+
