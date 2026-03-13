@@ -17,7 +17,7 @@ app.use('/projects', projectRoutes);
 app.use('/api/features/:featureId/tasks', taskRoutes);
 app.use('/api/modules', moduleRoutes);
 app.use('/api/projects/:projectId/features', featureRoutes);
-app.use('/technologies', technologyRoutes);
+app.use('/api/technologies', technologyRoutes);
 
 
 const PORT = process.env.PORT || 3000;

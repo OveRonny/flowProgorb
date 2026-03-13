@@ -6,6 +6,7 @@ import MainLayout from "../components/MainLayout.vue"
 import LoginView from "../features/auth/views/LoginView.vue"
 import RegisterPage from '../features/auth/views/RegisterView.vue'
 import ProjectView from '../features/projects/views/ProjectView.vue'
+import TechnologyView from "@/features/technologies/views/TechnologyView.vue"
 
 
 const routes = [{
@@ -22,10 +23,18 @@ const routes = [{
     name: "Home",
     component: MainLayout
   },
-   {
+  {
     path: "/project",
     name: "Project",
     component: ProjectView
+  },
+  {
+    path: '/technology',
+    component: TechnologyView,
+    name: 'Technology',
+    meta: {
+      requiresAuth: true
+    },
   },
 
 ]
