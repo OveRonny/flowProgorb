@@ -6,7 +6,7 @@
    
       <ul class="flex space-x-6">
         <li><router-link to="/" class="hover:underline">Dashbord</router-link></li>
-        <li><router-link to="/projects" class="hover:underline">Projects</router-link></li>
+        <li><router-link to="/project" class="hover:underline">Projects</router-link></li>
       </ul>
 
       
