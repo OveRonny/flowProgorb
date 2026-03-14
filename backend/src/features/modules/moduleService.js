@@ -15,21 +15,40 @@ export async function getModuleByIdService(id) {
 }
 
 export async function createModuleService(data) {  
-  const lastModule = await prisma.module.findFirst({
-    where: { projectId: data.projectId },
-    orderBy: { orderIndex: 'desc' }
-  });
-
-  const nextIndex = lastModule ? lastModule.orderIndex + 1 : 1;
-
-  return prisma.module.create({
-    data: {
-      name: data.name,
-      description: data.description,
-      projectId: data.projectId,
-      orderIndex: nextIndex
+    if (data.projectId == null) {
+        return prisma.module.create({
+            data: {
+                name: data.name,
+                description: data.description
+            }
+        });
     }
-  });
+
+    const lastProjectModule = await prisma.projectModule.findFirst({
+        where: {
+            projectId: data.projectId
+        },
+        orderBy: {
+            orderIndex: 'desc'
+        }
+    });
+
+    const nextIndex = lastProjectModule?.orderIndex != null
+        ? lastProjectModule.orderIndex + 1
+        : 1;
+
+    return prisma.module.create({
+        data: {
+            name: data.name,
+            description: data.description,
+            projectModules: {
+                create: {
+                    projectId: data.projectId,
+                    orderIndex: nextIndex
+                }
+            }
+        }
+    });
 }
 
 export async function updateModuleService(id, data) {

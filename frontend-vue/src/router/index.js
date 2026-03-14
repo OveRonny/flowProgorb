@@ -7,6 +7,8 @@ import LoginView from "../features/auth/views/LoginView.vue"
 import RegisterPage from '../features/auth/views/RegisterView.vue'
 import ProjectView from '../features/projects/views/ProjectView.vue'
 import TechnologyView from "@/features/technologies/views/TechnologyView.vue"
+import FeatureView from "@/features/features/views/FeatureView.vue"
+import ModuleView from "@/features/modules/views/ModuleView.vue"
 
 
 const routes = [{
@@ -32,6 +34,23 @@ const routes = [{
     path: '/technology',
     component: TechnologyView,
     name: 'Technology',
+    meta: {
+      requiresAuth: true
+    },
+  },
+
+  {
+    path: '/project/:id',
+    component: FeatureView,
+    name: 'Features',
+    meta: {
+      requiresAuth: true
+    },
+  },
+   {
+    path: '/module',
+    component: ModuleView,
+    name: 'Modules',
     meta: {
       requiresAuth: true
     },

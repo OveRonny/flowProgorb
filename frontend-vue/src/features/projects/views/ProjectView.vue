@@ -16,7 +16,7 @@
     <Modal v-model="showModal" title="Legg til nytt prosjekt">
       <ProjectForm @submit="handleAddProject" />
     </Modal>
-    
+
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <ProjectCard v-for="project in filteredProjects" :key="project.id" :project="project" @click="openProject(project.id)" @delete="handleDeleteProject"/>
     </div>
@@ -63,7 +63,7 @@ function handleDeleteProject(projectId) {
 }
 
 function openProject(id) { 
-  router.push({ name: 'ProjectDetails', params: { id } })
+  router.push({ name: 'Features', params: { id } })
 }
     
 </script>
