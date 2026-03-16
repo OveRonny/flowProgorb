@@ -45,12 +45,31 @@ export async function updateFeatureService(projectId, featureId, data) {
     );
   }
 
-  return prisma.feature.updateMany({
+  const existingFeature = await prisma.feature.findFirst({
     where: {
       id: featureId,
       projectId
     },
+    select: { id: true }
+  });
+
+  if (!existingFeature) {
+    throw new Error('Feature not found');
+  }
+
+  const hasTechnologyIds = Array.isArray(data.technologyIds);
+  const normalizedTechnologyIds = hasTechnologyIds
+    ? data.technologyIds
+      .map(id => Number(id))
+      .filter(id => Number.isInteger(id) && id > 0)
+    : [];
+
+  return prisma.feature.update({
+    where: {
+      id: featureId
+    },
     data: {
+      moduleId: data.moduleId !== undefined ? Number(data.moduleId) : undefined,
       name: data.name,
       description: data.description,
       status: data.status,
@@ -59,8 +78,14 @@ export async function updateFeatureService(projectId, featureId, data) {
       priority: data.priority,
       githubIssueId: data.githubIssueId,
       githubIssueUrl: data.githubIssueUrl,
-      githubIssueState: data.githubIssueState
-    }
+      githubIssueState: data.githubIssueState,
+      technologies: hasTechnologyIds
+        ? {
+          set: normalizedTechnologyIds.map(id => ({ id }))
+        }
+        : undefined
+    },
+    include: { technologies: true, tasks: true }
   });
 }
 

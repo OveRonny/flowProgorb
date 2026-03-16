@@ -1,7 +1,6 @@
 <template>
     <div class="min-h-screen bg-gray-100 dark:bg-gray-900 p-6">
         <div class="max-w-4xl mx-auto space-y-6">
-            <!-- Prosjektinfo -->
             <div v-if="project" class="bg-white dark:bg-gray-800 p-5 rounded shadow">
                 <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">{{ project.name }}</h1>
                 <p class="text-gray-600 dark:text-gray-400 mb-2">{{ project.description || 'Ingen beskrivelse' }}</p>
@@ -18,10 +17,19 @@
             </div>
             <div>
                 <h2>Features</h2>
-                <button class="bg-blue-500 text-white px-4 py-2 rounded mb-4" @click="showModal = true">Legg til Feature</button>
+                <button class="bg-blue-500 text-white px-4 py-2 rounded mb-4" @click="showModal = true">Legg til
+                    Feature</button>
             </div>
-
- </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <FeatureCard v-for="feature in projectFeatures" :key="feature.id" :feature="feature" @edit="handleEdit"
+                    @delete="handleDelete" />
+            </div>
+            <Modal v-model="showModal" :title="editingFeature ? 'Rediger Feature' : 'Ny Feature'">
+                <FeatureForm :key="editingFeature ? editingFeature.id : 'new'" :feature="editingFeature"
+                    :projectModules="project?.modules ?? []" :technologies="allTechnologies"
+                    @submit="editingFeature ? handleUpdate($event) : handleCreate($event)" />
+            </Modal>
+        </div>
     </div>
 </template>
 
@@ -30,13 +38,17 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useProjectsStore } from '../../projects/store.js'
 import { useTechnologiesStore } from '../../technologies/store.js'
-
+import FeatureCard from '../components/FeatureCard.vue'
+import FeatureForm from '../components/FeatureForm.vue'
+import Modal from '../../../components/Modal.vue'
 
 const route = useRoute()
 const projectStore = useProjectsStore()
 const technoStore = useTechnologiesStore()
+const editingFeature = ref(null)
 
 const allTechnologies = computed(() => technoStore.technologies)
+const projectFeatures = computed(() => (project.value?.features || []).filter(feature => feature && feature.id != null))
 
 const project = ref(null)
 const showModal = ref(false)
@@ -44,23 +56,54 @@ const showModal = ref(false)
 onMounted(async () => {
     const projectId = Number(route.params.id)
 
-    // Hent prosjekt med features og moduler
     await projectStore.fetchProjectById(projectId)
     project.value = projectStore.project
 
-    // Hent alle teknologier
     await technoStore.fetchTechnologies()
 })
 
-/* const handleAddFeatureModal = async (featureData) => {
-    if (!project.value) return
+const handleCreate = async (feature) => {
+    await projectStore.createProjectFeature(project.value.id, feature)
 
-    // Legg til feature via store
-    const newFeature = await projectStore.addFeatureToModule(project.value.id, featureData)
-
-    if (!project.value.features) project.value.features = []
-    project.value.features.push(newFeature)
+    await projectStore.fetchProjectById(project.value.id)
+    project.value = projectStore.project
 
     showModal.value = false
-} */
+}
+
+const handleEdit = async (feature) => {
+    editingFeature.value = feature
+    showModal.value = true
+}
+
+const handleUpdate = async (feature) => {
+    const featureId = editingFeature.value.id
+
+    await projectStore.updateProjectFeature(
+        project.value.id,
+        featureId,
+        {
+          name: feature.name,
+          description: feature.description,
+          moduleId: feature.moduleId,
+          technologyIds: feature.technologyIds 
+        }
+    )
+
+    await projectStore.fetchProjectById(project.value.id)
+    project.value = projectStore.project
+
+    editingFeature.value = null
+    showModal.value = false
+}
+
+const handleDelete = async (feature) => {
+    if (confirm('Slette denne featuren?')) {
+        await projectStore.deleteProjectFeature(project.value.id, feature.id)
+
+        // Refresh project data to remove deleted feature
+        await projectStore.fetchProjectById(project.value.id)
+        project.value = projectStore.project
+    }
+}
 </script>

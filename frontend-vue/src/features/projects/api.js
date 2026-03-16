@@ -23,3 +23,17 @@ export const updateProject = async (projectId, projectData) => {
 export const deleteProject = async (projectId) => {
     await api.delete(`/projects/${projectId}`);
 }
+
+export const createProjectFeature = async (projectId, featureData) => {
+    const response = await api.post(`/api/projects/${projectId}/features`, featureData);
+    return response.data;
+}
+
+export const updateProjectFeature = async (projectId, featureId, featureData) => {
+    const response = await api.put(`/api/projects/${projectId}/features/${featureId}`, featureData);
+    return response.data;
+}
+
+export const deleteProjectFeature = async (projectId, featureId) => {
+    await api.delete(`/api/projects/${projectId}/features/${featureId}`);
+}

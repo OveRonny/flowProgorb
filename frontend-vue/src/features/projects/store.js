@@ -7,7 +7,9 @@ import {
     createProject,
     updateProject,
     deleteProject,
-    
+    createProjectFeature,
+    updateProjectFeature,
+    deleteProjectFeature
 } from './api'
 
 export const useProjectsStore = defineStore('projects', {
@@ -83,6 +85,55 @@ export const useProjectsStore = defineStore('projects', {
             }
 
         },
+            async createProjectFeature(projectId, featureData) {
+            this.loading = true
+            this.error = null
+            try {
+                return await createProjectFeature(projectId, featureData)
+            }
+                catch (err) {
+                this.error = err.response?.data?.message || 'Failed to add feature to project'
+            } finally {
+                this.loading = false
+            }   
+        },
+        async updateProjectFeature(projectId, featureId, featureData) {
+            this.loading = true
+            this.error = null
+            try {     
+                await updateProjectFeature(projectId, featureId, featureData)
+                const index = this.project.features.findIndex(f => f.id === featureId)
+                if (index !== -1) {
+                    this.project.features[index] = {
+                        ...this.project.features[index],
+                        ...featureData
+                    }
+                }
+            } catch (err) {
+                this.error = err.response?.data?.message || 'Failed to update feature'
+            }
+                finally {
+                this.loading = false
+            }
+        },
+        async deleteProjectFeature(projectId, featureId) {
+            this.loading = true
+            this.error = null
+            try {
+                console.log('Deleting feature', featureId, 'from project', projectId)
+                await deleteProjectFeature(projectId, featureId)
+                const index = this.project.features.findIndex(f => f.id === featureId)
+                if (index !== -1) {
+                    this.project.features.splice(index, 1)
+                }
+            }
+                catch (err) {
+                this.error = err.response?.data?.message || 'Failed to delete feature'
+            } finally {
+                this.loading = false
+            }
+        }
+
       
          
     }

@@ -38,7 +38,7 @@ export const updateFeatureController = handleAsync(async (req, res) => {
     const id = parseId(req.params.id);
     const data = req.body;  
     const updatedFeature = await updateFeatureService(projectId, id, data);    
-    res.status(201).json(updatedFeature);
+    res.status(200).json(updatedFeature);
 });
 
 // DELETE /api/projects/:projectId/features/:id
