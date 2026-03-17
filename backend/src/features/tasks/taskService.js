@@ -1,9 +1,9 @@
 import { prisma } from '../prisma/client.js';
+import { calculateTaskCollectionProgress } from '../helpers/progress.js';
 
-const TASK_STATUSES = ['PENDING', 'COMPLETED', 'IN_PROGRESS', 'BLOCKED', 'TODO', 'DONE'];
+const TASK_STATUSES = ['PENDING', 'IN_PROGRESS', 'DONE'];
 
-// Hent alle tasks for en feature, med filter og sortering
-export async function getAllTasksService(featureId, statusFilter) {  
+export async function getAllTasksService(featureId, statusFilter) {
   const whereClause = { featureId };
   if (statusFilter && TASK_STATUSES.includes(statusFilter)) {
     whereClause.status = statusFilter;
@@ -11,20 +11,23 @@ export async function getAllTasksService(featureId, statusFilter) {
 
   return prisma.task.findMany({
     where: whereClause,
-    include: { feature: true }, // inkluder feature-data
+    include: { feature: true, timeLogs: true },
     orderBy: { orderIndex: 'asc' }
   });
 }
 
-// Hent en task spesifikt
 export async function getTaskByIdService(featureId, taskId) {
   return prisma.task.findFirst({
     where: { id: taskId, featureId },
-    include: { feature: true }
+    include: {
+      feature: true,
+      timeLogs: {
+        orderBy: { createdAt: 'desc' }
+      }
+    }
   });
 }
 
-// Opprett ny task under en feature
 export async function createTaskService(featureId, data) {
   const { title, description, status, estimatedHours, orderIndex } = data;
 
@@ -34,7 +37,7 @@ export async function createTaskService(featureId, data) {
     );
   }
 
-  return prisma.task.create({
+  const task = await prisma.task.create({
     data: {
       featureId,
       title,
@@ -43,11 +46,12 @@ export async function createTaskService(featureId, data) {
       estimatedHours,
       orderIndex
     },
-    include: { feature: true }
+    include: { feature: true, timeLogs: true }
   });
+
+  return task;
 }
 
-// Oppdater en task
 export async function updateTaskService(featureId, taskId, data) {
   if (data.status && !TASK_STATUSES.includes(data.status)) {
     throw new Error(
@@ -55,45 +59,168 @@ export async function updateTaskService(featureId, taskId, data) {
     );
   }
 
-  return prisma.task.updateMany({
+  const existingTask = await prisma.task.findFirst({
     where: { id: taskId, featureId },
+    select: { id: true }
+  });
+
+  if (!existingTask) {
+    throw new Error('Task not found');
+  }
+
+  const updatedTask = await prisma.task.update({
+    where: { id: taskId },
     data: {
       title: data.title,
       description: data.description,
       status: data.status,
       estimatedHours: data.estimatedHours,
       orderIndex: data.orderIndex,
-      completedAt: data.status === 'COMPLETED' ? new Date() : null
-    }
+      completedAt: data.status === 'DONE' ? new Date() : data.status ? null : undefined
+    },
+    include: { feature: true, timeLogs: true }
   });
+
+  return updatedTask;
 }
 
-// Slett en task
 export async function deleteTaskService(featureId, taskId) {
   return prisma.task.deleteMany({
     where: { id: taskId, featureId }
   });
 }
 
-// Kalkuler progress for en feature basert på tasks
 export async function calculateFeatureProgress(featureId) {
   const tasks = await prisma.task.findMany({
     where: { featureId },
     select: { status: true }
   });
 
-  if (tasks.length === 0) return 0;
-
-  const completedTasks = tasks.filter(t => t.status === 'COMPLETED').length;
-  const progress = Math.round((completedTasks / tasks.length) * 100);
-  return progress;
+  return calculateTaskCollectionProgress(tasks);
 }
 
-// Oppdater feature progress automatisk etter en task-endring
 export async function updateFeatureProgress(featureId) {
-  const progress = await calculateFeatureProgress(featureId);
-  return prisma.feature.update({
+  return prisma.feature.findUnique({
     where: { id: featureId },
-    data: { progress }
+    select: { id: true, projectId: true }
+  });
+}
+
+export async function calculateProjectProgress(projectId) {
+  const features = await prisma.feature.findMany({
+    where: { projectId },
+    select: {
+      tasks: {
+        select: { status: true }
+      }
+    }
+  });
+
+  const allTasks = features.flatMap(feature => feature.tasks || []);
+  if (allTasks.length > 0) {
+    return calculateTaskCollectionProgress(allTasks);
+  }
+
+  return 0;
+}
+
+export async function updateProjectProgress(projectId) {
+  return prisma.project.findUnique({
+    where: { id: projectId },
+    select: { id: true }
+  });
+}
+
+export async function syncFeatureAndProjectProgress(featureId) {
+  return updateFeatureProgress(featureId);
+}
+
+async function ensureTaskInFeature(featureId, taskId) {
+  const task = await prisma.task.findFirst({
+    where: { id: taskId, featureId },
+    select: { id: true }
+  });
+
+  if (!task) {
+    throw new Error('Task not found');
+  }
+}
+
+export async function getTaskTimeLogsService(featureId, taskId) {
+  await ensureTaskInFeature(featureId, taskId);
+
+  return prisma.taskTimeLog.findMany({
+    where: { taskId },
+    orderBy: { createdAt: 'desc' }
+  });
+}
+
+export async function createTaskTimeLogService(featureId, taskId, data) {
+  await ensureTaskInFeature(featureId, taskId);
+
+  const minutes = Number(data.minutes);
+  if (!Number.isInteger(minutes) || minutes <= 0) {
+    throw new Error('minutes must be a positive integer');
+  }
+
+  return prisma.taskTimeLog.create({
+    data: {
+      taskId,
+      minutes,
+      note: data.note ?? null
+    }
+  });
+}
+
+export async function updateTaskTimeLogService(featureId, taskId, timeLogId, data) {
+  const existingLog = await prisma.taskTimeLog.findFirst({
+    where: {
+      id: timeLogId,
+      taskId,
+      task: { featureId }
+    },
+    select: { id: true }
+  });
+
+  if (!existingLog) {
+    throw new Error('Task time log not found');
+  }
+
+  const updateData = {};
+
+  if (data.minutes !== undefined) {
+    const minutes = Number(data.minutes);
+    if (!Number.isInteger(minutes) || minutes <= 0) {
+      throw new Error('minutes must be a positive integer');
+    }
+    updateData.minutes = minutes;
+  }
+
+  if (data.note !== undefined) {
+    updateData.note = data.note ?? null;
+  }
+
+  return prisma.taskTimeLog.update({
+    where: { id: timeLogId },
+    data: updateData
+  });
+}
+
+export async function deleteTaskTimeLogService(featureId, taskId, timeLogId) {
+  const existingLog = await prisma.taskTimeLog.findFirst({
+    where: {
+      id: timeLogId,
+      taskId,
+      task: { featureId }
+    },
+    select: { id: true }
+  });
+
+  if (!existingLog) {
+    throw new Error('Task time log not found');
+  }
+
+  await prisma.taskTimeLog.delete({
+    where: { id: timeLogId }
   });
 }

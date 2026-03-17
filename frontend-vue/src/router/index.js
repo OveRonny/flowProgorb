@@ -5,10 +5,12 @@ import {
 import MainLayout from "../components/MainLayout.vue"
 import LoginView from "../features/auth/views/LoginView.vue"
 import RegisterPage from '../features/auth/views/RegisterView.vue'
+import GitHubCallbackView from '../features/auth/views/GitHubCallbackView.vue'
 import ProjectView from '../features/projects/views/ProjectView.vue'
 import TechnologyView from "@/features/technologies/views/TechnologyView.vue"
 import FeatureView from "@/features/features/views/FeatureView.vue"
 import ModuleView from "@/features/modules/views/ModuleView.vue"
+import TaskView from "@/features/tasks/views/TaskView.vue"
 
 
 const routes = [{
@@ -19,6 +21,11 @@ const routes = [{
     path: '/register',
     component: RegisterPage,
     name: 'Register'
+  },
+  {
+    path: '/auth/callback',
+    component: GitHubCallbackView,
+    name: 'GitHubCallback'
   },
   {
     path: "/",
@@ -51,6 +58,14 @@ const routes = [{
     path: '/module',
     component: ModuleView,
     name: 'Modules',
+    meta: {
+      requiresAuth: true
+    },
+  },
+   {
+    path: '/features/:featureId/tasks',
+    component: TaskView,
+    name: 'Tasks',
     meta: {
       requiresAuth: true
     },

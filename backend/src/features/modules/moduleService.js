@@ -15,38 +15,30 @@ export async function getModuleByIdService(id) {
 }
 
 export async function createModuleService(data) {  
-    if (data.projectId == null) {
-        return prisma.module.create({
-            data: {
-                name: data.name,
-                description: data.description
-            }
-        });
+    const projectId = Number(data.projectId);
+    if (!Number.isInteger(projectId) || projectId <= 0) {
+        throw new Error('projectId is required and must be a positive integer');
     }
 
-    const lastProjectModule = await prisma.projectModule.findFirst({
+    const lastModule = await prisma.module.findFirst({
         where: {
-            projectId: data.projectId
+            projectId
         },
         orderBy: {
             orderIndex: 'desc'
         }
     });
 
-    const nextIndex = lastProjectModule?.orderIndex != null
-        ? lastProjectModule.orderIndex + 1
+    const nextIndex = lastModule?.orderIndex != null
+        ? lastModule.orderIndex + 1
         : 1;
 
     return prisma.module.create({
         data: {
             name: data.name,
             description: data.description,
-            projectModules: {
-                create: {
-                    projectId: data.projectId,
-                    orderIndex: nextIndex
-                }
-            }
+            projectId,
+            orderIndex: nextIndex
         }
     });
 }
@@ -58,12 +50,16 @@ export async function updateModuleService(id, data) {
         },
         data: {
             name: data.name,
-            description: data.description
+            description: data.description,
+            projectId: data.projectId !== undefined ? Number(data.projectId) : undefined,
+            orderIndex: data.orderIndex
         },  
         select: {
             id: true,
             name: true,
-            description: true
+            description: true,
+            projectId: true,
+            orderIndex: true
         }
     });
 }

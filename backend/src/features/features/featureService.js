@@ -21,18 +21,18 @@ export async function getFeatureByIdService(projectId, featureId) {
 
 export async function createFeatureService(projectId, data) {
   const { moduleId, name, description, technologyIds } = data;
+  const normalizedModuleId = Number(moduleId);
 
   return prisma.feature.create({
     data: {
       projectId,
-      moduleId,
+      moduleId: normalizedModuleId,
       name,
       description: description ?? null,
       technologies: technologyIds
         ? { connect: technologyIds.map(id => ({ id })) }
         : undefined,
-      status: 'PLANNED',
-      progress: 0
+      status: 'PLANNED'
     },
     include: { technologies: true, tasks: true }
   });
@@ -73,12 +73,11 @@ export async function updateFeatureService(projectId, featureId, data) {
       name: data.name,
       description: data.description,
       status: data.status,
-      progress: data.progress,
-      deadline: data.deadline ? new Date(data.deadline) : undefined,
-      priority: data.priority,
       githubIssueId: data.githubIssueId,
       githubIssueUrl: data.githubIssueUrl,
       githubIssueState: data.githubIssueState,
+      githubBranchName: data.githubBranchName,
+      githubSyncedAt: data.githubSyncedAt ? new Date(data.githubSyncedAt) : undefined,
       technologies: hasTechnologyIds
         ? {
           set: normalizedTechnologyIds.map(id => ({ id }))

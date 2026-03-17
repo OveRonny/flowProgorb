@@ -5,6 +5,12 @@ import {
     parseId
 } from '../helpers/validators.js';
 import { getAllProjectsService, getProjectByIdService, createProjectService, updateProjectService, deleteProjectService } from './projectService.js'
+import {
+    connectProjectGithubRepoService,
+    getProjectGithubRepoService,
+    createFeatureGithubIssueService,
+    syncFeatureGithubIssueService
+} from './githubService.js';
 
 export const getAllProjectsController = handleAsync(async (req, res) => {
     
@@ -25,7 +31,7 @@ export const createProjectController = handleAsync(async (req, res) => {
     const data = req.body;    
     const newProject = await createProjectService({
         ...data,
-        userId: req.user.userId
+        userId: req.user?.userId
     });   
     res.status(201).json(newProject);
 });
@@ -42,5 +48,31 @@ export const deleteProjectController = handleAsync( async (req, res) => {
     const id = parseId(req.params.id);
     await deleteProjectService(id);
     res.status(204).send();
+});
+
+export const connectProjectGithubRepoController = handleAsync(async (req, res) => {
+    const projectId = parseId(req.params.id);
+    const result = await connectProjectGithubRepoService(projectId, req.body || {});
+    res.json(result);
+});
+
+export const getProjectGithubRepoController = handleAsync(async (req, res) => {
+    const projectId = parseId(req.params.id);
+    const result = await getProjectGithubRepoService(projectId);
+    res.json(result);
+});
+
+export const createFeatureGithubIssueController = handleAsync(async (req, res) => {
+    const projectId = parseId(req.params.id);
+    const featureId = parseId(req.params.featureId);
+    const result = await createFeatureGithubIssueService(projectId, featureId, req.body || {});
+    res.status(201).json(result);
+});
+
+export const syncFeatureGithubIssueController = handleAsync(async (req, res) => {
+    const projectId = parseId(req.params.id);
+    const featureId = parseId(req.params.featureId);
+    const result = await syncFeatureGithubIssueService(projectId, featureId);
+    res.json(result);
 });
 

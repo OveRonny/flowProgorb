@@ -9,13 +9,18 @@ import {
     deleteProject,
     createProjectFeature,
     updateProjectFeature,
-    deleteProjectFeature
+    deleteProjectFeature,
+    connectProjectGithubRepo,
+    fetchProjectGithubRepo,
+    createFeatureGithubIssue,
+    syncFeatureGithubIssue
 } from './api'
 
 export const useProjectsStore = defineStore('projects', {
     state: () => ({
         projects: [],
         project: null,
+        githubRepo: null,
         tasks: {},
         loading: false,
         error: null
@@ -129,6 +134,67 @@ export const useProjectsStore = defineStore('projects', {
             }
                 catch (err) {
                 this.error = err.response?.data?.message || 'Failed to delete feature'
+            } finally {
+                this.loading = false
+            }
+        },
+        async connectGithubRepo(projectId, payload) {
+            this.loading = true
+            this.error = null
+            try {
+                const result = await connectProjectGithubRepo(projectId, payload)
+                if (this.project && this.project.id === projectId) {
+                    this.project = {
+                        ...this.project,
+                        githubOwner: result.githubOwner,
+                        githubRepoName: result.githubRepoName,
+                        githubRepoId: result.githubRepoId,
+                        githubDefaultBranch: result.githubDefaultBranch,
+                        githubRepoUrl: result.githubRepoUrl
+                    }
+                }
+                return result
+            } catch (err) {
+                this.error = err.response?.data?.message || 'Failed to connect GitHub repo'
+                return null
+            } finally {
+                this.loading = false
+            }
+        },
+        async fetchGithubRepo(projectId) {
+            this.loading = true
+            this.error = null
+            try {
+                const result = await fetchProjectGithubRepo(projectId)
+                this.githubRepo = result
+                return result
+            } catch (err) {
+                this.error = err.response?.data?.message || 'Failed to load GitHub repo details'
+                return null
+            } finally {
+                this.loading = false
+            }
+        },
+        async createGithubIssueForFeature(projectId, featureId, payload = {}) {
+            this.loading = true
+            this.error = null
+            try {
+                return await createFeatureGithubIssue(projectId, featureId, payload)
+            } catch (err) {
+                this.error = err.response?.data?.message || 'Failed to create GitHub issue'
+                return null
+            } finally {
+                this.loading = false
+            }
+        },
+        async syncGithubIssueForFeature(projectId, featureId) {
+            this.loading = true
+            this.error = null
+            try {
+                return await syncFeatureGithubIssue(projectId, featureId)
+            } catch (err) {
+                this.error = err.response?.data?.message || 'Failed to sync GitHub issue'
+                return null
             } finally {
                 this.loading = false
             }

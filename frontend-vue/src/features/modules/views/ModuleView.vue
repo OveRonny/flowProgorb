@@ -2,7 +2,12 @@
     <div class="min-h-screen bg-gray-100 dark:bg-gray-900 p-6">
         <div class="max-w-3xl mx-auto">
             <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-6">Modules</h1>
-            <ModuleForm :module="editingModule" :onSubmit="handleSubmit" :onCancel="cancelEdit" />
+            <ModuleForm
+                :module="editingModule"
+                :projects="projectStore.projects"
+                :onSubmit="handleSubmit"
+                :onCancel="cancelEdit"
+            />
 
             <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Modules list</h2>
             <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
@@ -61,6 +66,7 @@
 <script>
 import { ref, onMounted } from "vue";
 import { useModulesStore } from "../store.js";
+import { useProjectsStore } from "../../projects/store.js";
 import ModuleForm from "../components/ModuleForm.vue";
 
 export default {
@@ -68,10 +74,12 @@ export default {
 
     setup() {
         const moduleStore = useModulesStore();
+          const projectStore = useProjectsStore();
         const editingModule = ref(null);
 
         onMounted( async () => {
            await moduleStore.fetchModules();
+              await projectStore.fetchProjects();
         });
 
         const handleSubmit = async (data) => {
@@ -98,6 +106,7 @@ export default {
 
         return {
             moduleStore,
+            projectStore,
             handleSubmit,
             cancelEdit,
             deleteModule,

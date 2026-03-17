@@ -16,30 +16,54 @@ model User {
   id       Int       @id @default(autoincrement())
   email    String    @unique
   password String
-  projects Project[]
+  projectMemberships ProjectMember[]
+  assignedTasks      Task[]
+}
+
+model ProjectMember {
+  id        Int    @id @default(autoincrement())
+
+  user      User   @relation(fields: [userId], references: [id])
+  userId    Int
+
+  project   Project @relation(fields: [projectId], references: [id])
+  projectId Int
+
+  role      ProjectRole @default(MEMBER)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, projectId])
+}
+
+enum ProjectRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
 }
 
 model Project {
   id          Int     @id @default(autoincrement())
-  user        User    @relation(fields: [userId], references: [id])
-  userId      Int
+  members ProjectMember[]
   name        String
   description String?
 
   githubRepoUrl       String?
   githubRepoId        Int?
   githubDefaultBranch String?
+  githubOwner         String?
+  githubRepoName      String?
   features            Feature[]
-  status              ProjectStatus   @default(PLANNED)
-  progress            Int             @default(0)
+  status              ProjectStatus   @default(PLANNED)  
   deadline            DateTime?
   priority            Int?
   tags                String[]
-  modules             ProjectModule[] 
+  modules             Module[]
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
-
-  @@unique([userId, name])
+  activities          Activity[]
+ 
 }
 
 enum ProjectStatus {
@@ -51,25 +75,21 @@ enum ProjectStatus {
 
 model Module {
   id          Int     @id @default(autoincrement())
-  name        String  @unique
+  name        String
   description String?
 
-  projectModules ProjectModule[]
-  features       Feature[]
-}
-
-model ProjectModule {
-  id Int @id @default(autoincrement())
-
-  project   Project @relation(fields: [projectId], references: [id])
   projectId Int
+  project   Project @relation(fields: [projectId], references: [id])
 
-  module   Module @relation(fields: [moduleId], references: [id])
-  moduleId Int
+  features Feature[]
 
   orderIndex Int?
 
-  @@unique([projectId, moduleId])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, name])
+  @@index([projectId])
 }
 
 model Feature {
@@ -80,17 +100,20 @@ model Feature {
   projectId        Int
   name             String
   description      String?
-  status           FeatureStatus @default(PLANNED)
-  progress         Int           @default(0)
+  status           FeatureStatus @default(PLANNED) 
   githubIssueId    Int?
   githubIssueUrl   String?
   githubIssueState String?
+  githubBranchName String?
+  githubSyncedAt   DateTime?
   orderIndex       Int?
 
   tasks        Task[]
   technologies Technology[]
 
   @@unique([projectId, moduleId, name])
+  @@index([projectId])
+  @@index([moduleId])
 }
 
 enum FeatureStatus {
@@ -108,18 +131,36 @@ model Task {
   status         TaskStatus @default(PENDING)
   estimatedHours Int?
   completedAt    DateTime?
+  assignedTo     User? @relation(fields: [assignedToId], references: [id])
+  assignedToId   Int?
 
   githubCommentId Int?
   githubPRId      Int?
   githubUrl       String?
   orderIndex      Int?
 
+  timeLogs TaskTimeLog[]
+
   @@unique([featureId, title])
+  @@index([featureId])
 }
 
 enum TaskStatus {
   PENDING
-  COMPLETED
+  IN_PROGRESS
+  DONE
+}
+
+model TaskTimeLog {
+  id        Int      @id @default(autoincrement())
+  taskId    Int
+  task      Task     @relation(fields: [taskId], references: [id])
+
+  minutes   Int
+  note      String?
+
+  createdAt DateTime @default(now())
+  @@index([taskId])
 }
 
 model Technology {
@@ -134,6 +175,25 @@ enum TechnologyType {
   LANGUAGE
   FRAMEWORK
   LIBRARY
+}
+
+model Activity {
+  id Int @id @default(autoincrement())
+
+  type ActivityType
+
+  project   Project @relation(fields: [projectId], references: [id])
+  projectId Int
+
+  createdAt DateTime @default(now())
+}
+
+enum ActivityType {
+  TASK_CREATED
+  TASK_COMPLETED
+  FEATURE_CREATED
+  FEATURE_COMPLETED
+  PROJECT_UPDATED
 }
 
 

@@ -14,6 +14,21 @@
                    text-gray-900 dark:text-gray-100
                    focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
+        <div class="mb-4">
+            <label class="block text-gray-700 dark:text-gray-300 mb-1">
+                Project
+            </label>
+
+            <select v-model="form.projectId" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded
+                   bg-gray-50 dark:bg-gray-700
+                   text-gray-900 dark:text-gray-100
+                   focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option disabled value="">Select project</option>
+                <option v-for="project in projects" :key="project.id" :value="project.id">
+                    {{ project.name }}
+                </option>
+            </select>
+        </div>
          <div class="mb-4">
             <label class="block text-gray-700 dark:text-gray-300 mb-1">
                 Beskrivelse
@@ -63,6 +78,10 @@ export default {
         module: Object,
         onSubmit: Function,
         onCancel: Function,
+        projects: {
+            type: Array,
+            default: () => []
+        }
         
     },
 
@@ -70,16 +89,20 @@ export default {
 
         const form = ref({
             name: "",
-            description: ""
+            description: "",
+            projectId: ""
         });
 
         watch(
             () => props.module,
             (mod) => {
                 if (mod) {
-                    form.value = { ...mod };
+                    form.value = {
+                        ...mod,
+                        projectId: mod.projectId != null ? Number(mod.projectId) : ""
+                    };
                 } else {
-                    form.value = { name: "", description: "" };
+                    form.value = { name: "", description: "", projectId: "" };
                 }
             },
             { immediate: true }
@@ -88,9 +111,13 @@ export default {
         const isEditing = computed(() => !!props.module);
 
         const handleSubmit = () => {
-            if (!form.value.name || !form.value.description) return;
+            if (!form.value.name || !form.value.description || !form.value.projectId) return;
 
-            props.onSubmit({ name: form.value.name, description: form.value.description });
+            props.onSubmit({
+                name: form.value.name,
+                description: form.value.description,
+                projectId: Number(form.value.projectId)
+            });
         };
 
         return {

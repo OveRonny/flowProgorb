@@ -37,3 +37,23 @@ export const updateProjectFeature = async (projectId, featureId, featureData) =>
 export const deleteProjectFeature = async (projectId, featureId) => {
     await api.delete(`/api/projects/${projectId}/features/${featureId}`);
 }
+
+export const connectProjectGithubRepo = async (projectId, payload) => {
+    const response = await api.post(`/api/projects/${projectId}/github/connect`, payload);
+    return response.data;
+}
+
+export const fetchProjectGithubRepo = async (projectId) => {
+    const response = await api.get(`/api/projects/${projectId}/github/repo`);
+    return response.data;
+}
+
+export const createFeatureGithubIssue = async (projectId, featureId, payload = {}) => {
+    const response = await api.post(`/api/projects/${projectId}/features/${featureId}/github/issue`, payload);
+    return response.data;
+}
+
+export const syncFeatureGithubIssue = async (projectId, featureId) => {
+    const response = await api.post(`/api/projects/${projectId}/features/${featureId}/github/issue/sync`);
+    return response.data;
+}
