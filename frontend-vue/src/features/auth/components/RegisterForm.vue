@@ -22,9 +22,12 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../../auth/store.js'
 
 const auth = useAuthStore()
+const router = useRouter()
+const route = useRoute()
 
 const email = ref('')
 const password = ref('')
@@ -33,6 +36,11 @@ const error = ref(null)
 const loading = ref(false)
 
 const passwordMismatch = computed(() => password.value && confirmPassword.value && password.value !== confirmPassword.value)
+
+function getRedirectTarget() {
+    const redirect = route.query.redirect
+    return typeof redirect === 'string' && redirect.startsWith('/') ? redirect : '/project'
+}
 
 const handleRegister = async () => {
     error.value = null
@@ -43,8 +51,11 @@ const handleRegister = async () => {
 
     loading.value = true
     try {
-        await auth.register({ email: email.value, password: password.value })
-        
+        const success = await auth.register({ email: email.value, password: password.value })
+
+        if (success !== false && auth.token) {
+            router.push(getRedirectTarget())
+        }
 
     } catch (err) {
         error.value = err

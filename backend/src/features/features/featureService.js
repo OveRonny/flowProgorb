@@ -77,6 +77,9 @@ export async function updateFeatureService(projectId, featureId, data) {
       githubIssueUrl: data.githubIssueUrl,
       githubIssueState: data.githubIssueState,
       githubBranchName: data.githubBranchName,
+      githubPRId: data.githubPRId,
+      githubPRUrl: data.githubPRUrl,
+      githubPRState: data.githubPRState,
       githubSyncedAt: data.githubSyncedAt ? new Date(data.githubSyncedAt) : undefined,
       technologies: hasTechnologyIds
         ? {

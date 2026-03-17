@@ -1,0 +1,4 @@
+ALTER TABLE "Feature"
+ADD COLUMN "githubPRId" INTEGER,
+ADD COLUMN "githubPRUrl" TEXT,
+ADD COLUMN "githubPRState" TEXT;

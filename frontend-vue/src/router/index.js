@@ -12,15 +12,36 @@ import FeatureView from "@/features/features/views/FeatureView.vue"
 import ModuleView from "@/features/modules/views/ModuleView.vue"
 import TaskView from "@/features/tasks/views/TaskView.vue"
 
+function getStoredToken() {
+  let token = localStorage.getItem('token')
+
+  try {
+    token = JSON.parse(token)
+  } catch {
+    // Keep raw token value when it is not JSON encoded.
+  }
+
+  if (typeof token === 'string') {
+    return token.replace(/^"|"$/g, '').trim()
+  }
+
+  return null
+}
 
 const routes = [{
     path: "/login",
-    component: LoginView
+    component: LoginView,
+    meta: {
+      guestOnly: true
+    },
   },
   {
     path: '/register',
     component: RegisterPage,
     name: 'Register'
+    ,meta: {
+      guestOnly: true
+    }
   },
   {
     path: '/auth/callback',
@@ -35,7 +56,10 @@ const routes = [{
   {
     path: "/project",
     name: "Project",
-    component: ProjectView
+    component: ProjectView,
+    meta: {
+      requiresAuth: true
+    },
   },
   {
     path: '/technology',
@@ -76,6 +100,27 @@ const routes = [{
 const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+router.beforeEach((to) => {
+  const hasToken = Boolean(getStoredToken())
+  const requiresAuth = to.matched.some((record) => record.meta?.requiresAuth)
+  const guestOnly = to.matched.some((record) => record.meta?.guestOnly)
+
+  if (requiresAuth && !hasToken) {
+    return {
+      path: '/login',
+      query: {
+        redirect: to.fullPath,
+      },
+    }
+  }
+
+  if (guestOnly && hasToken) {
+    return { path: '/project' }
+  }
+
+  return true
 })
 
 export default router

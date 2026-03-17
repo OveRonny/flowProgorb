@@ -2,14 +2,12 @@ import { prisma } from '../prisma/client.js';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecret';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '30d';
+import { getJwtSecret, JWT_EXPIRES_IN } from './authConfig.js';
 
 export function signAuthToken(user) {
   return jwt.sign(
     { userId: user.id, email: user.email },
-    JWT_SECRET,
+    getJwtSecret(),
     { expiresIn: JWT_EXPIRES_IN }
   );
 }

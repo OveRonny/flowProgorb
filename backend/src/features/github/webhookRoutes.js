@@ -4,6 +4,153 @@ import { prisma } from '../prisma/client.js';
 
 const router = express.Router();
 
+function getRepoIdentity(repository) {
+  const fullName = repository?.full_name || '';
+  const ownerFromFullName = fullName.includes('/') ? fullName.split('/')[0] : undefined;
+  return {
+    repoOwner: repository?.owner?.login || repository?.owner?.name || ownerFromFullName,
+    repoName: repository?.name,
+  };
+}
+
+function normalizeText(value) {
+  return String(value || '').toLowerCase();
+}
+
+function extractClosingIssueNumbers(text) {
+  const issueNumbers = new Set();
+  const pattern = /(close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+#(\d+)/gi;
+
+  for (const match of text.matchAll(pattern)) {
+    issueNumbers.add(Number(match[2]));
+  }
+
+  return [...issueNumbers].filter(Number.isInteger);
+}
+
+function taskMatchesText(task, text) {
+  const titleLower = normalizeText(task.title);
+  const mentionedByTitle = titleLower.length > 0 && text.includes(titleLower);
+  const mentionedById = new RegExp(`(^|\\s|#|task[-_ ]?)${task.id}(\\b|$)`, 'i').test(text);
+  return mentionedByTitle || mentionedById;
+}
+
+async function findProjectByRepository(repository) {
+  const { repoOwner, repoName } = getRepoIdentity(repository);
+  if (!repoOwner || !repoName) {
+    return null;
+  }
+
+  const project = await prisma.project.findFirst({
+    where: { githubOwner: repoOwner, githubRepoName: repoName },
+    select: { id: true },
+  });
+
+  if (!project) {
+    return null;
+  }
+
+  return {
+    projectId: project.id,
+    repoOwner,
+    repoName,
+  };
+}
+
+async function syncPullRequestEvent(payload) {
+  const { action, pull_request: pullRequest, repository } = payload;
+  if (!pullRequest) {
+    return;
+  }
+
+  const projectContext = await findProjectByRepository(repository);
+  if (!projectContext) {
+    return;
+  }
+
+  const projectId = projectContext.projectId;
+  const branchName = pullRequest.head?.ref || null;
+  const prNumber = pullRequest.number;
+  const prState = pullRequest.merged ? 'merged' : pullRequest.state;
+  const prUrl = pullRequest.html_url || null;
+  const prText = [pullRequest.title, pullRequest.body].filter(Boolean).join('\n').trim();
+  const closingIssueNumbers = extractClosingIssueNumbers(prText);
+
+  let feature = null;
+
+  if (branchName) {
+    feature = await prisma.feature.findFirst({
+      where: { projectId, githubBranchName: branchName },
+      include: { tasks: true },
+    });
+  }
+
+  if (!feature && closingIssueNumbers.length > 0) {
+    feature = await prisma.feature.findFirst({
+      where: {
+        projectId,
+        githubIssueId: { in: closingIssueNumbers },
+      },
+      include: { tasks: true },
+    });
+  }
+
+  if (feature) {
+    const featureStatus = pullRequest.merged
+      ? 'DONE'
+      : ['opened', 'reopened', 'ready_for_review', 'synchronize'].includes(action) && feature.status === 'PLANNED'
+        ? 'IN_PROGRESS'
+        : undefined;
+
+    await prisma.feature.update({
+      where: { id: feature.id },
+      data: {
+        status: featureStatus,
+        githubBranchName: branchName ?? undefined,
+        githubPRId: prNumber,
+        githubPRUrl: prUrl,
+        githubPRState: prState,
+        githubSyncedAt: new Date(),
+      },
+    });
+  }
+
+  const tasks = feature?.tasks ?? await prisma.task.findMany({
+    where: { feature: { projectId } },
+    select: { id: true, title: true, status: true, githubPRId: true },
+  });
+
+  const matchedTasks = tasks.filter((task) => {
+    if (task.githubPRId === prNumber) {
+      return true;
+    }
+
+    if (!prText) {
+      return false;
+    }
+
+    return taskMatchesText(task, prText);
+  });
+
+  for (const task of matchedTasks) {
+    const nextStatus = pullRequest.merged
+      ? 'DONE'
+      : ['opened', 'reopened', 'ready_for_review', 'synchronize'].includes(action) && task.status === 'PENDING'
+        ? 'IN_PROGRESS'
+        : undefined;
+
+    await prisma.task.update({
+      where: { id: task.id },
+      data: {
+        status: nextStatus,
+        completedAt: pullRequest.merged ? new Date() : undefined,
+        githubPRId: prNumber,
+        githubUrl: prUrl,
+      },
+    });
+  }
+}
+
 function verifySignature(rawBody, signature) {
   const secret = process.env.GITHUB_WEBHOOK_SECRET;
   if (!secret) return true; // skip verification if not configured (dev only)
@@ -40,10 +187,7 @@ router.post('/webhook', express.raw({ type: '*/*' }), async (req, res) => {
 
   if (event === 'issues') {
     const { action, issue, repository } = payload;
-    const fullName = repository?.full_name || '';
-    const ownerFromFullName = fullName.includes('/') ? fullName.split('/')[0] : undefined;
-    const repoOwner = repository?.owner?.login || repository?.owner?.name || ownerFromFullName;
-    const repoName = repository?.name;
+    const { repoOwner, repoName } = getRepoIdentity(repository);
     
 
     if (['opened', 'edited', 'closed', 'reopened'].includes(action)) {
@@ -77,10 +221,7 @@ router.post('/webhook', express.raw({ type: '*/*' }), async (req, res) => {
 
   if (event === 'push') {
     const { ref, commits = [], repository } = payload;
-    const fullName = repository?.full_name || '';
-    const ownerFromFullName = fullName.includes('/') ? fullName.split('/')[0] : undefined;
-    const repoOwner = repository?.owner?.login || repository?.owner?.name || ownerFromFullName;
-    const repoName = repository?.name;
+    const { repoOwner, repoName } = getRepoIdentity(repository);
     const branch = ref?.replace('refs/heads/', ''); 
     
     commits.forEach(c => console.log(`  commit: "${c.message}"`));
@@ -166,6 +307,14 @@ router.post('/webhook', express.raw({ type: '*/*' }), async (req, res) => {
       }
     } catch (err) {
       console.error('[Webhook] push sync error:', err.message);
+    }
+  }
+
+  if (event === 'pull_request') {
+    try {
+      await syncPullRequestEvent(payload);
+    } catch (err) {
+      console.error('[Webhook] pull_request sync error:', err.message);
     }
   }
 

@@ -105,6 +105,9 @@ model Feature {
   githubIssueUrl   String?
   githubIssueState String?
   githubBranchName String?
+  githubPRId       Int?
+  githubPRUrl      String?
+  githubPRState    String?
   githubSyncedAt   DateTime?
   orderIndex       Int?
 
