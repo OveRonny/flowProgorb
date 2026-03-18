@@ -10,25 +10,27 @@ import githubRoutes from './features/github/webhookRoutes.js';
 
 export function createApp() {
   const app = express();
-  const allowedOrigins = new Set([
-    'http://localhost:5173',
-    process.env.FRONTEND_URL,
-    'https://api.progorb.no',
-  ]);
+
 
   app.use(
     cors({
       origin(origin, callback) {
-        if (!origin || allowedOrigins.has(origin)) {
-          callback(null, true);
-          return;
-        }
+        const allowedOrigins = [
+          'http://localhost:5173',
+          'https://flow.progorb.no',
+        ];
 
-        callback(new Error('Not allowed by CORS'));
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(null, false);
+        }
       },
       credentials: true,
     })
   );
+
+  app.options('*', cors());
 
   // GitHub webhook MUST be registered before express.json() so it receives the raw Buffer
   // (express.raw() is applied per-route inside webhookRoutes.js for HMAC verification)
