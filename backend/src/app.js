@@ -11,16 +11,33 @@ import githubRoutes from './features/github/webhookRoutes.js';
 export function createApp() {
   const app = express();
 
+  const allowedOrigins = new Set([
+    'http://localhost:5173',
+    'https://flow.progorb.no',
+    process.env.FRONTEND_URL,
+  ]);
+
+  function isAllowedOrigin(origin) {
+    if (!origin) {
+      return true;
+    }
+
+    if (allowedOrigins.has(origin)) {
+      return true;
+    }
+
+    try {
+      const { hostname } = new URL(origin);
+      return hostname === 'progorb.no' || hostname.endsWith('.progorb.no');
+    } catch {
+      return false;
+    }
+  }
 
   app.use(
     cors({
       origin(origin, callback) {
-        const allowedOrigins = [
-          'http://localhost:5173',
-          'https://flow.progorb.no',
-        ];
-
-        if (!origin || allowedOrigins.includes(origin)) {
+        if (isAllowedOrigin(origin)) {
           callback(null, true);
         } else {
           callback(null, false);
