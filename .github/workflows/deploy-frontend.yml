@@ -18,6 +18,8 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     name: Build and Deploy
+    env:
+      SWA_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
 
     defaults:
       run:
@@ -43,7 +45,7 @@ jobs:
         run: npm run build
 
       - name: Deploy frontend
-        if: ${{ github.event.action != 'closed' && secrets.AZURE_STATIC_WEB_APPS_API_TOKEN != '' }}
+        if: ${{ github.event.action != 'closed' && env.SWA_TOKEN != '' }}
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
@@ -57,7 +59,7 @@ jobs:
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
 
       - name: Close preview environment
-        if: ${{ github.event.action == 'closed' && secrets.AZURE_STATIC_WEB_APPS_API_TOKEN != '' }}
+        if: ${{ github.event.action == 'closed' && env.SWA_TOKEN != '' }}
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
@@ -65,5 +67,5 @@ jobs:
           action: 'close'
 
       - name: Skip deploy without token
-        if: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN == '' }}
+        if: ${{ env.SWA_TOKEN == '' }}
         run: echo "Skipping Azure Static Web Apps deployment because AZURE_STATIC_WEB_APPS_API_TOKEN is not configured for this run."
