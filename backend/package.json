@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "postinstall": "prisma generate",
+    "postinstall": "npx prisma generate",
     "dev": "nodemon src/server.js",
-    "start": "prisma generate && node src/server.js",
+    "start": "npx prisma generate && node src/server.js",
     "test": "node --test"
   },
   "keywords": [],
