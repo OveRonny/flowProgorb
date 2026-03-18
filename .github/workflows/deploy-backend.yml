@@ -53,3 +53,27 @@ jobs:
           app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: backend
+
+      - name: Configure Azure App Service settings
+        uses: azure/appservice-settings@v1
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          app-settings-json: |
+            [
+              {
+                "name": "DATABASE_URL",
+                "value": "${{ secrets.DATABASE_URL }}",
+                "slotSetting": false
+              },
+              {
+                "name": "JWT_SECRET",
+                "value": "${{ secrets.JWT_SECRET }}",
+                "slotSetting": false
+              },
+              {
+                "name": "FRONTEND_URL",
+                "value": "${{ secrets.FRONTEND_URL }}",
+                "slotSetting": false
+              }
+            ]
