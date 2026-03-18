@@ -30,8 +30,6 @@ export function createApp() {
     })
   );
 
-  app.options('*', cors());
-
   // GitHub webhook MUST be registered before express.json() so it receives the raw Buffer
   // (express.raw() is applied per-route inside webhookRoutes.js for HMAC verification)
   app.use('/github', githubRoutes);
