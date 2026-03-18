@@ -6,7 +6,10 @@ import { assertRequiredAuthEnv } from './features/auth/authConfig.js';
 
 const currentFilePath = fileURLToPath(import.meta.url);
 const currentDirPath = dirname(currentFilePath);
-dotenv.config({ path: resolve(currentDirPath, '../.env') });
+dotenv.config({
+  path: resolve(currentDirPath, '../.env'),
+  override: process.env.NODE_ENV !== 'production',
+});
 
 assertRequiredAuthEnv();
 

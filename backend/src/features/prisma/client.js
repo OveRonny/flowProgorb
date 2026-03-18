@@ -8,7 +8,10 @@ const { PrismaClient } = prismaPkg;
 
 const currentFilePath = fileURLToPath(import.meta.url);
 const currentDirPath = dirname(currentFilePath);
-dotenv.config({ path: resolve(currentDirPath, "../../../.env") });
+dotenv.config({
+  path: resolve(currentDirPath, "../../../.env"),
+  override: process.env.NODE_ENV !== "production",
+});
 
 function getRequiredDatabaseUrl() {
   const databaseUrl = process.env.DATABASE_URL?.trim();
