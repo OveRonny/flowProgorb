@@ -1,4 +1,5 @@
-import { TechnologyType } from "@prisma/client"
+import pkg from "@prisma/client";
+const { TechnologyType } = pkg;
 import { prisma } from "../prisma/client.js"
 
 export async function getAllTechnologiesService() {
