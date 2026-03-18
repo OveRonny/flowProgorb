@@ -1,6 +1,10 @@
 import axios from 'axios'
 
-const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000').trim()
+const fallbackApiUrl = import.meta.env.PROD
+  ? 'https://api.progorb.no'
+  : 'http://localhost:3000'
+
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || fallbackApiUrl).trim()
 
 const api = axios.create({
   baseURL: apiBaseUrl,
