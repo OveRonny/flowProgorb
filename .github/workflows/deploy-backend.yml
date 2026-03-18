@@ -55,13 +55,13 @@ jobs:
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          app-name: flowprogorb-api
           package: backend
 
       - name: Configure Azure App Service settings
         uses: azure/appservice-settings@v1
         with:
-          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          app-name: flowprogorb-api
           app-settings-json: |
             [
               {
