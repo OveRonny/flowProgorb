@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createApp } from './app.js';
 import { assertRequiredAuthEnv } from './features/auth/authConfig.js';
 
@@ -15,8 +15,10 @@ assertRequiredAuthEnv();
 
 const app = createApp();
 const PORT = process.env.PORT || 3000;
+const isDirectRun =
+  process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url;
 
-if (process.argv[1] === currentFilePath) {
+if (isDirectRun) {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
