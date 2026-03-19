@@ -65,9 +65,20 @@ function parseRepoUrl(repoUrl) {
   }
 }
 
-async function getProjectWithRepo(projectId) {
-  const project = await prisma.project.findUnique({
-    where: { id: projectId },
+async function getProjectWithRepo(projectId, userId) {
+  if (!userId) {
+    throw createHttpError('Project not found', 404);
+  }
+
+  const project = await prisma.project.findFirst({
+    where: {
+      id: projectId,
+      members: {
+        some: {
+          userId
+        }
+      }
+    },
     select: {
       id: true,
       githubOwner: true,
@@ -89,7 +100,27 @@ async function getProjectWithRepo(projectId) {
   return project;
 }
 
-export async function connectProjectGithubRepoService(projectId, data) {
+export async function connectProjectGithubRepoService(projectId, data, userId) {
+  if (!userId) {
+    throw createHttpError('Project not found', 404);
+  }
+
+  const accessibleProject = await prisma.project.findFirst({
+    where: {
+      id: projectId,
+      members: {
+        some: {
+          userId
+        }
+      }
+    },
+    select: { id: true }
+  });
+
+  if (!accessibleProject) {
+    throw createHttpError('Project not found', 404);
+  }
+
   let owner = data.owner;
   let repo = data.repo;
   if (data.repoUrl) {
@@ -127,8 +158,8 @@ export async function connectProjectGithubRepoService(projectId, data) {
   });
 }
 
-export async function getProjectGithubRepoService(projectId) {
-  const project = await getProjectWithRepo(projectId);
+export async function getProjectGithubRepoService(projectId, userId) {
+  const project = await getProjectWithRepo(projectId, userId);
   const octokit = await getInstallationClient(project.githubOwner, project.githubRepoName);
 
   const [repoResponse, branchesResponse] = await Promise.all([
@@ -153,8 +184,8 @@ export async function getProjectGithubRepoService(projectId) {
   };
 }
 
-export async function createFeatureGithubIssueService(projectId, featureId, data) {
-  const project = await getProjectWithRepo(projectId);
+export async function createFeatureGithubIssueService(projectId, featureId, data, userId) {
+  const project = await getProjectWithRepo(projectId, userId);
   const octokit = await getInstallationClient(project.githubOwner, project.githubRepoName);
 
   const feature = await prisma.feature.findFirst({
@@ -201,8 +232,8 @@ export async function createFeatureGithubIssueService(projectId, featureId, data
   };
 }
 
-export async function syncFeatureGithubIssueService(projectId, featureId) {
-  const project = await getProjectWithRepo(projectId);
+export async function syncFeatureGithubIssueService(projectId, featureId, userId) {
+  const project = await getProjectWithRepo(projectId, userId);
   const octokit = await getInstallationClient(project.githubOwner, project.githubRepoName);
 
   const feature = await prisma.feature.findFirst({

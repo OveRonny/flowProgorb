@@ -2,14 +2,40 @@ import { prisma } from '../prisma/client.js';
 
 const FEATURE_STATUSES = ['PLANNED', 'IN_PROGRESS', 'DONE'];
 
-export async function getAllFeaturesService(projectId) {
+async function userHasProjectAccess(projectId, userId) {
+  if (!userId) {
+    return false;
+  }
+
+  const membership = await prisma.projectMember.findUnique({
+    where: {
+      userId_projectId: {
+        userId,
+        projectId
+      }
+    },
+    select: { id: true }
+  });
+
+  return Boolean(membership);
+}
+
+export async function getAllFeaturesService(projectId, userId) {
+  if (!(await userHasProjectAccess(projectId, userId))) {
+    return [];
+  }
+
   return prisma.feature.findMany({
     where: { projectId },
     include: { technologies: true, tasks: true }
   });
 }
 
-export async function getFeatureByIdService(projectId, featureId) {
+export async function getFeatureByIdService(projectId, featureId, userId) {
+  if (!(await userHasProjectAccess(projectId, userId))) {
+    return null;
+  }
+
   return prisma.feature.findFirst({
     where: {
       id: featureId,
@@ -19,9 +45,25 @@ export async function getFeatureByIdService(projectId, featureId) {
   });
 }
 
-export async function createFeatureService(projectId, data) {
+export async function createFeatureService(projectId, data, userId) {
+  if (!(await userHasProjectAccess(projectId, userId))) {
+    return null;
+  }
+
   const { moduleId, name, description, technologyIds } = data;
   const normalizedModuleId = Number(moduleId);
+
+  const module = await prisma.module.findFirst({
+    where: {
+      id: normalizedModuleId,
+      projectId
+    },
+    select: { id: true }
+  });
+
+  if (!module) {
+    throw new Error('Module not found for this project');
+  }
 
   return prisma.feature.create({
     data: {
@@ -38,7 +80,11 @@ export async function createFeatureService(projectId, data) {
   });
 }
 
-export async function updateFeatureService(projectId, featureId, data) {
+export async function updateFeatureService(projectId, featureId, data, userId) {
+  if (!(await userHasProjectAccess(projectId, userId))) {
+    return null;
+  }
+
   if (data.status && !FEATURE_STATUSES.includes(data.status)) {
     throw new Error(
       `Ugyldig status: ${data.status}. Gyldige verdier: ${FEATURE_STATUSES.join(', ')}`
@@ -92,7 +138,11 @@ export async function updateFeatureService(projectId, featureId, data) {
 }
 
 
-export async function deleteFeatureService(projectId, featureId) {
+export async function deleteFeatureService(projectId, featureId, userId) {
+  if (!(await userHasProjectAccess(projectId, userId))) {
+    return { count: 0 };
+  }
+
   return prisma.feature.deleteMany({
     where: {
       id: featureId,

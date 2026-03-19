@@ -26,8 +26,19 @@ function calculateProjectProgressFromFeatures(features) {
   return 0;
 }
 
-export async function getAllProjectsService() {
+export async function getAllProjectsService(userId) {
+    if (!userId) {
+      return [];
+    }
+
     const projects = await prisma.project.findMany({
+      where: {
+        members: {
+          some: {
+            userId
+          }
+        }
+      },
       include: {
         features: {
           include: {
@@ -51,9 +62,20 @@ export async function getAllProjectsService() {
     });
 }
 
-export async function getProjectByIdService(id) {
-  const project = await prisma.project.findUnique({
-    where: { id },
+export async function getProjectByIdService(id, userId) {
+  if (!userId) {
+    return null;
+  }
+
+  const project = await prisma.project.findFirst({
+    where: {
+      id,
+      members: {
+        some: {
+          userId
+        }
+      }
+    },
     include: {
       modules: {
         orderBy: { orderIndex: 'asc' }
@@ -108,6 +130,12 @@ export async function createProjectService(data) {
       githubRepoName
     } = data;
 
+    if (!userId) {
+      const error = new Error('Unauthorized');
+      error.status = 401;
+      throw error;
+    }
+
     const newProject = await prisma.project.create({
       data: {
         name,
@@ -121,14 +149,12 @@ export async function createProjectService(data) {
         githubDefaultBranch: githubDefaultBranch ?? null,
         githubOwner: githubOwner ?? null,
         githubRepoName: githubRepoName ?? null,
-        members: userId
-          ? {
-            create: {
-              userId,
-              role: 'OWNER'
-            }
+        members: {
+          create: {
+            userId,
+            role: 'OWNER'
           }
-          : undefined
+        }
       }
     });
 
@@ -139,7 +165,29 @@ export async function createProjectService(data) {
   }
 }
 
-export async function updateProjectService(id, data) {
+async function userHasProjectAccess(id, userId) {
+  if (!userId) {
+    return false;
+  }
+
+  const membership = await prisma.projectMember.findUnique({
+    where: {
+      userId_projectId: {
+        userId,
+        projectId: id
+      }
+    },
+    select: { id: true }
+  });
+
+  return Boolean(membership);
+}
+
+export async function updateProjectService(id, data, userId) {
+  if (!(await userHasProjectAccess(id, userId))) {
+    return null;
+  }
+
   const PROJECT_STATUSES = ['PLANNED', 'ACTIVE', 'COMPLETED', 'ON_HOLD'];
   if (data.status && !PROJECT_STATUSES.includes(data.status)) {
     throw new Error(
@@ -179,7 +227,11 @@ export async function updateProjectService(id, data) {
   });
 }
 
-export async function deleteProjectService(id) {
+export async function deleteProjectService(id, userId) {
+    if (!(await userHasProjectAccess(id, userId))) {
+      return null;
+    }
+
     return prisma.$transaction(async (tx) => {
       const features = await tx.feature.findMany({
         where: { projectId: id },

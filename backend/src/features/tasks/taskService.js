@@ -3,8 +3,27 @@ import { calculateTaskCollectionProgress } from '../helpers/progress.js';
 
 const TASK_STATUSES = ['PENDING', 'IN_PROGRESS', 'DONE'];
 
-export async function getAllTasksService(featureId, statusFilter) {
-  const whereClause = { featureId };
+const projectMembershipFilter = (userId) => ({
+  feature: {
+    project: {
+      members: {
+        some: {
+          userId
+        }
+      }
+    }
+  }
+});
+
+export async function getAllTasksService(featureId, statusFilter, userId) {
+  if (!userId) {
+    return [];
+  }
+
+  const whereClause = {
+    featureId,
+    ...projectMembershipFilter(userId)
+  };
   if (statusFilter && TASK_STATUSES.includes(statusFilter)) {
     whereClause.status = statusFilter;
   }
@@ -16,9 +35,13 @@ export async function getAllTasksService(featureId, statusFilter) {
   });
 }
 
-export async function getTaskByIdService(featureId, taskId) {
+export async function getTaskByIdService(featureId, taskId, userId) {
+  if (!userId) {
+    return null;
+  }
+
   return prisma.task.findFirst({
-    where: { id: taskId, featureId },
+    where: { id: taskId, featureId, ...projectMembershipFilter(userId) },
     include: {
       feature: true,
       timeLogs: {
@@ -28,13 +51,35 @@ export async function getTaskByIdService(featureId, taskId) {
   });
 }
 
-export async function createTaskService(featureId, data) {
+export async function createTaskService(featureId, data, userId) {
+  if (!userId) {
+    return null;
+  }
+
   const { title, description, status, estimatedHours, orderIndex } = data;
 
   if (status && !TASK_STATUSES.includes(status)) {
     throw new Error(
       `Ugyldig status: ${status}. Gyldige verdier: ${TASK_STATUSES.join(', ')}`
     );
+  }
+
+  const accessibleFeature = await prisma.feature.findFirst({
+    where: {
+      id: featureId,
+      project: {
+        members: {
+          some: {
+            userId
+          }
+        }
+      }
+    },
+    select: { id: true }
+  });
+
+  if (!accessibleFeature) {
+    return null;
   }
 
   const task = await prisma.task.create({
@@ -52,7 +97,11 @@ export async function createTaskService(featureId, data) {
   return task;
 }
 
-export async function updateTaskService(featureId, taskId, data) {
+export async function updateTaskService(featureId, taskId, data, userId) {
+  if (!userId) {
+    return null;
+  }
+
   if (data.status && !TASK_STATUSES.includes(data.status)) {
     throw new Error(
       `Ugyldig status: ${data.status}. Gyldige verdier: ${TASK_STATUSES.join(', ')}`
@@ -60,12 +109,12 @@ export async function updateTaskService(featureId, taskId, data) {
   }
 
   const existingTask = await prisma.task.findFirst({
-    where: { id: taskId, featureId },
+    where: { id: taskId, featureId, ...projectMembershipFilter(userId) },
     select: { id: true }
   });
 
   if (!existingTask) {
-    throw new Error('Task not found');
+    return null;
   }
 
   const updatedTask = await prisma.task.update({
@@ -84,9 +133,13 @@ export async function updateTaskService(featureId, taskId, data) {
   return updatedTask;
 }
 
-export async function deleteTaskService(featureId, taskId) {
+export async function deleteTaskService(featureId, taskId, userId) {
+  if (!userId) {
+    return { count: 0 };
+  }
+
   return prisma.task.deleteMany({
-    where: { id: taskId, featureId }
+    where: { id: taskId, featureId, ...projectMembershipFilter(userId) }
   });
 }
 
@@ -135,9 +188,9 @@ export async function syncFeatureAndProjectProgress(featureId) {
   return updateFeatureProgress(featureId);
 }
 
-async function ensureTaskInFeature(featureId, taskId) {
+async function ensureTaskInFeature(featureId, taskId, userId) {
   const task = await prisma.task.findFirst({
-    where: { id: taskId, featureId },
+    where: { id: taskId, featureId, ...projectMembershipFilter(userId) },
     select: { id: true }
   });
 
@@ -146,8 +199,8 @@ async function ensureTaskInFeature(featureId, taskId) {
   }
 }
 
-export async function getTaskTimeLogsService(featureId, taskId) {
-  await ensureTaskInFeature(featureId, taskId);
+export async function getTaskTimeLogsService(featureId, taskId, userId) {
+  await ensureTaskInFeature(featureId, taskId, userId);
 
   return prisma.taskTimeLog.findMany({
     where: { taskId },
@@ -155,8 +208,8 @@ export async function getTaskTimeLogsService(featureId, taskId) {
   });
 }
 
-export async function createTaskTimeLogService(featureId, taskId, data) {
-  await ensureTaskInFeature(featureId, taskId);
+export async function createTaskTimeLogService(featureId, taskId, data, userId) {
+  await ensureTaskInFeature(featureId, taskId, userId);
 
   const minutes = Number(data.minutes);
   if (!Number.isInteger(minutes) || minutes <= 0) {
@@ -172,12 +225,19 @@ export async function createTaskTimeLogService(featureId, taskId, data) {
   });
 }
 
-export async function updateTaskTimeLogService(featureId, taskId, timeLogId, data) {
+export async function updateTaskTimeLogService(featureId, taskId, timeLogId, data, userId) {
+  if (!userId) {
+    throw new Error('Task time log not found');
+  }
+
   const existingLog = await prisma.taskTimeLog.findFirst({
     where: {
       id: timeLogId,
       taskId,
-      task: { featureId }
+      task: {
+        featureId,
+        ...projectMembershipFilter(userId)
+      }
     },
     select: { id: true }
   });
@@ -206,12 +266,19 @@ export async function updateTaskTimeLogService(featureId, taskId, timeLogId, dat
   });
 }
 
-export async function deleteTaskTimeLogService(featureId, taskId, timeLogId) {
+export async function deleteTaskTimeLogService(featureId, taskId, timeLogId, userId) {
+  if (!userId) {
+    throw new Error('Task time log not found');
+  }
+
   const existingLog = await prisma.taskTimeLog.findFirst({
     where: {
       id: timeLogId,
       taskId,
-      task: { featureId }
+      task: {
+        featureId,
+        ...projectMembershipFilter(userId)
+      }
     },
     select: { id: true }
   });

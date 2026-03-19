@@ -9,7 +9,7 @@ import { getAllFeaturesService, getFeatureByIdService, createFeatureService, upd
 // GET /api/projects/:projectId/features
 export const getAllFeaturesController = handleAsync(async (req, res) => {
     const projectId = parseId(req.params.projectId);  // <--- nytt
-    const features = await getAllFeaturesService(projectId);
+    const features = await getAllFeaturesService(projectId, req.user?.userId);
     res.json(features);
 });
 
@@ -17,7 +17,7 @@ export const getAllFeaturesController = handleAsync(async (req, res) => {
 export const getFeatureByIdController = handleAsync(async (req, res) => {
     const projectId = parseId(req.params.projectId); // <--- nytt
     const id = parseId(req.params.id);
-    const feature = await getFeatureByIdService(projectId, id);
+    const feature = await getFeatureByIdService(projectId, id, req.user?.userId);
     if (!feature) {
         return res.status(404).json({ error: 'Feature not found' });
     }
@@ -28,7 +28,11 @@ export const getFeatureByIdController = handleAsync(async (req, res) => {
 export const createFeatureController = handleAsync(async (req, res) => {
     const projectId = parseId(req.params.projectId); // <--- nytt
     const data = req.body;
-    const newFeature = await createFeatureService(projectId, data);
+    const newFeature = await createFeatureService(projectId, data, req.user?.userId);
+    if (!newFeature) {
+        return res.status(404).json({ error: 'Project not found' });
+    }
+
     res.status(201).json(newFeature);
 });
 
@@ -37,7 +41,11 @@ export const updateFeatureController = handleAsync(async (req, res) => {
     const projectId = parseId(req.params.projectId); // <--- nytt
     const id = parseId(req.params.id);
     const data = req.body;  
-    const updatedFeature = await updateFeatureService(projectId, id, data);    
+    const updatedFeature = await updateFeatureService(projectId, id, data, req.user?.userId);
+    if (!updatedFeature) {
+        return res.status(404).json({ error: 'Feature not found' });
+    }
+
     res.status(200).json(updatedFeature);
 });
 
@@ -45,7 +53,11 @@ export const updateFeatureController = handleAsync(async (req, res) => {
 export const deleteFeatureController = handleAsync(async (req, res) => {
     const projectId = parseId(req.params.projectId); // <--- nytt
     const id = parseId(req.params.id);
-    await deleteFeatureService(projectId, id);
+    const result = await deleteFeatureService(projectId, id, req.user?.userId);
+    if (!result.count) {
+        return res.status(404).json({ error: 'Feature not found' });
+    }
+
     res.status(204).send();
 });
 

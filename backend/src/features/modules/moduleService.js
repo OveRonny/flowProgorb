@@ -2,22 +2,69 @@ import {
     prisma
 } from '../prisma/client.js';
 
-export async function getAllModulesService() {
-    return prisma.module.findMany({});
+async function userHasProjectAccess(projectId, userId) {
+    if (!userId) {
+        return false;
+    }
+
+    const membership = await prisma.projectMember.findUnique({
+        where: {
+            userId_projectId: {
+                userId,
+                projectId
+            }
+        },
+        select: { id: true }
+    });
+
+    return Boolean(membership);
 }
 
-export async function getModuleByIdService(id) {
-    return prisma.module.findUnique({
+export async function getAllModulesService(userId) {
+    if (!userId) {
+        return [];
+    }
+
+    return prisma.module.findMany({
         where: {
-            id
+            project: {
+                members: {
+                    some: {
+                        userId
+                    }
+                }
+            }
         }
     });
 }
 
-export async function createModuleService(data) {  
+export async function getModuleByIdService(id, userId) {
+    if (!userId) {
+        return null;
+    }
+
+    return prisma.module.findFirst({
+        where: {
+            id,
+            project: {
+                members: {
+                    some: {
+                        userId
+                    }
+                }
+            }
+        }
+    });
+}
+
+export async function createModuleService(data, userId) {
     const projectId = Number(data.projectId);
     if (!Number.isInteger(projectId) || projectId <= 0) {
         throw new Error('projectId is required and must be a positive integer');
+    }
+
+    if (!(await userHasProjectAccess(projectId, userId))) {
+        return null;
     }
 
     const lastModule = await prisma.module.findFirst({
@@ -43,7 +90,36 @@ export async function createModuleService(data) {
     });
 }
 
-export async function updateModuleService(id, data) {
+export async function updateModuleService(id, data, userId) {
+    const existingModule = await prisma.module.findFirst({
+        where: {
+            id,
+            project: {
+                members: {
+                    some: {
+                        userId
+                    }
+                }
+            }
+        },
+        select: { id: true, projectId: true }
+    });
+
+    if (!existingModule) {
+        return null;
+    }
+
+    if (data.projectId !== undefined) {
+        const nextProjectId = Number(data.projectId);
+        if (!Number.isInteger(nextProjectId) || nextProjectId <= 0) {
+            throw new Error('projectId must be a positive integer');
+        }
+
+        if (!(await userHasProjectAccess(nextProjectId, userId))) {
+            return null;
+        }
+    }
+
     return prisma.module.update({
         where: {
             id
@@ -64,10 +140,17 @@ export async function updateModuleService(id, data) {
     });
 }
 
-export async function deleteModuleService(id) {
-    return prisma.module.delete({
+export async function deleteModuleService(id, userId) {
+    return prisma.module.deleteMany({
         where: {
-            id
+            id,
+            project: {
+                members: {
+                    some: {
+                        userId
+                    }
+                }
+            }
         }
     });
 }
