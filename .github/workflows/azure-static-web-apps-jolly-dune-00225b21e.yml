@@ -17,63 +17,32 @@ jobs:
     permissions:
       contents: read
 
-    defaults:
-      run:
-        working-directory: frontend-vue
-
     steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: true
-          lfs: false
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22.x'
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: frontend-vue/package-lock.json
 
       - name: Install dependencies
+        working-directory: frontend-vue
         run: npm ci
 
-      - name: Resolve Static Web Apps token
-        id: resolve-token
-        env:
-          SWA_TOKEN_PRIMARY: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
-          SWA_TOKEN_LEGACY: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_JOLLY_DUNE_00225B21E }}
-        run: |
-          if [ -n "$SWA_TOKEN_LEGACY" ]; then
-            echo "SWA_TOKEN=$SWA_TOKEN_LEGACY" >> "$GITHUB_ENV"
-            echo "token_source=AZURE_STATIC_WEB_APPS_API_TOKEN_JOLLY_DUNE_00225B21E" >> "$GITHUB_OUTPUT"
-          elif [ -n "$SWA_TOKEN_PRIMARY" ]; then
-            echo "SWA_TOKEN=$SWA_TOKEN_PRIMARY" >> "$GITHUB_ENV"
-            echo "token_source=AZURE_STATIC_WEB_APPS_API_TOKEN" >> "$GITHUB_OUTPUT"
-          else
-            echo "token_source=missing" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Validate resolved token
-        run: |
-          if [ -z "$SWA_TOKEN" ]; then
-            echo "::error::No Static Web Apps token resolved. Set AZURE_STATIC_WEB_APPS_API_TOKEN or AZURE_STATIC_WEB_APPS_API_TOKEN_JOLLY_DUNE_00225B21E."
-            exit 1
-          fi
-          echo "Using token source: ${{ steps.resolve-token.outputs.token_source }}"
-          echo "Resolved token length: ${#SWA_TOKEN}"
-
       - name: Build frontend
+        working-directory: frontend-vue
         run: npm run build
 
-      - name: Deploy frontend
-        id: builddeploy
+      - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ env.SWA_TOKEN }}
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: upload
-          app_location: ./frontend-vue
-          api_location: ''
+          app_location: frontend-vue
           output_location: dist
           skip_app_build: true
         env:
@@ -83,23 +52,10 @@ jobs:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
     name: Close Pull Request Job
-    steps:
-      - name: Resolve Static Web Apps token
-        id: resolve-token
-        env:
-          SWA_TOKEN_PRIMARY: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
-          SWA_TOKEN_LEGACY: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_JOLLY_DUNE_00225B21E }}
-        run: |
-          if [ -n "$SWA_TOKEN_LEGACY" ]; then
-            echo "SWA_TOKEN=$SWA_TOKEN_LEGACY" >> "$GITHUB_ENV"
-          elif [ -n "$SWA_TOKEN_PRIMARY" ]; then
-            echo "SWA_TOKEN=$SWA_TOKEN_PRIMARY" >> "$GITHUB_ENV"
-          fi
 
-      - name: Close Pull Request
-        if: ${{ env.SWA_TOKEN != '' }}
-        id: closepullrequest
+    steps:
+      - name: Close Pull Request Environment
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ env.SWA_TOKEN }}
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: close
