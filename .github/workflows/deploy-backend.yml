@@ -45,6 +45,21 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
 
+      - name: Validate required deployment secrets
+        run: |
+          if [ -z "${{ secrets.DATABASE_URL }}" ]; then
+            echo "::error::Missing required GitHub secret: DATABASE_URL"
+            exit 1
+          fi
+          if [ -z "${{ secrets.JWT_SECRET }}" ]; then
+            echo "::error::Missing required GitHub secret: JWT_SECRET"
+            exit 1
+          fi
+          if [ -z "${{ secrets.FRONTEND_URL }}" ]; then
+            echo "::error::Missing required GitHub secret: FRONTEND_URL"
+            exit 1
+          fi
+
       - name: Deploy to Azure App Service
         uses: azure/login@v2
         with:

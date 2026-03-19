@@ -2,6 +2,8 @@ import {
     defineStore
 } from 'pinia'
 import { login, register } from './api'
+import router from '../../router'
+import { useProjectsStore } from '../projects/store'
 
 export const useAuthStore = defineStore('auth', {
     state: () => ({
@@ -47,9 +49,15 @@ export const useAuthStore = defineStore('auth', {
         },             
 
         logout() {
+            const projectsStore = useProjectsStore()
+            projectsStore.$reset()
+
             this.user = null
+            this.email = null
             this.token = null
+            this.error = null
             localStorage.removeItem('token')
+            router.push('/login')
         }
     }
 });

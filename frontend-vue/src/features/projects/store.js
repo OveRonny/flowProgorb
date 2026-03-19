@@ -32,6 +32,7 @@ export const useProjectsStore = defineStore('projects', {
             try {
                 this.projects = await fetchProjects()
             } catch (err) {
+                this.projects = []
                 this.error = err.response?.data?.message || 'Failed to load projects'
             } finally {
                 this.loading = false
