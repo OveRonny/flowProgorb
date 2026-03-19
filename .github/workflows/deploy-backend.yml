@@ -45,19 +45,12 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
 
-      - name: Validate required deployment secrets
+      - name: Check deployment secrets
         run: |
-          if [ -z "${{ secrets.DATABASE_URL }}" ]; then
-            echo "::error::Missing required GitHub secret: DATABASE_URL"
-            exit 1
-          fi
-          if [ -z "${{ secrets.JWT_SECRET }}" ]; then
-            echo "::error::Missing required GitHub secret: JWT_SECRET"
-            exit 1
-          fi
-          if [ -z "${{ secrets.FRONTEND_URL }}" ]; then
-            echo "::error::Missing required GitHub secret: FRONTEND_URL"
-            exit 1
+          if [ -z "${{ secrets.DATABASE_URL }}" ] || [ -z "${{ secrets.JWT_SECRET }}" ] || [ -z "${{ secrets.FRONTEND_URL }}" ]; then
+            echo "::warning::One or more secrets are missing. Azure App Settings update will be skipped to avoid overwriting existing values."
+          else
+            echo "All required secrets are present."
           fi
 
       - name: Deploy to Azure App Service
@@ -75,6 +68,7 @@ jobs:
 
       - name: Configure Azure App Service settings
         uses: azure/appservice-settings@v1
+        if: ${{ secrets.DATABASE_URL != '' && secrets.JWT_SECRET != '' && secrets.FRONTEND_URL != '' }}
         with:
           app-name: flowprogorb-api
           app-settings-json: |
