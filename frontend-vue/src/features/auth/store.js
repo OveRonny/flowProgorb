@@ -2,7 +2,6 @@ import {
     defineStore
 } from 'pinia'
 import { login, register } from './api'
-import router from '../../router'
 import { useProjectsStore } from '../projects/store'
 
 export const useAuthStore = defineStore('auth', {
@@ -57,7 +56,9 @@ export const useAuthStore = defineStore('auth', {
             this.token = null
             this.error = null
             localStorage.removeItem('token')
-            router.push('/login')
+            sessionStorage.removeItem('token')
+            // Force a full reload so any in-memory state from protected views is dropped.
+            window.location.assign('/login')
         }
     }
 });
