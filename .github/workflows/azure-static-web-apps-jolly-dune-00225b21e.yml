@@ -43,12 +43,12 @@ jobs:
           SWA_TOKEN_PRIMARY: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           SWA_TOKEN_LEGACY: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_JOLLY_DUNE_00225B21E }}
         run: |
-          if [ -n "$SWA_TOKEN_PRIMARY" ]; then
-            echo "SWA_TOKEN=$SWA_TOKEN_PRIMARY" >> "$GITHUB_ENV"
-            echo "token_source=AZURE_STATIC_WEB_APPS_API_TOKEN" >> "$GITHUB_OUTPUT"
-          elif [ -n "$SWA_TOKEN_LEGACY" ]; then
+          if [ -n "$SWA_TOKEN_LEGACY" ]; then
             echo "SWA_TOKEN=$SWA_TOKEN_LEGACY" >> "$GITHUB_ENV"
             echo "token_source=AZURE_STATIC_WEB_APPS_API_TOKEN_JOLLY_DUNE_00225B21E" >> "$GITHUB_OUTPUT"
+          elif [ -n "$SWA_TOKEN_PRIMARY" ]; then
+            echo "SWA_TOKEN=$SWA_TOKEN_PRIMARY" >> "$GITHUB_ENV"
+            echo "token_source=AZURE_STATIC_WEB_APPS_API_TOKEN" >> "$GITHUB_OUTPUT"
           else
             echo "token_source=missing" >> "$GITHUB_OUTPUT"
           fi
@@ -90,10 +90,10 @@ jobs:
           SWA_TOKEN_PRIMARY: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           SWA_TOKEN_LEGACY: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_JOLLY_DUNE_00225B21E }}
         run: |
-          if [ -n "$SWA_TOKEN_PRIMARY" ]; then
-            echo "SWA_TOKEN=$SWA_TOKEN_PRIMARY" >> "$GITHUB_ENV"
-          elif [ -n "$SWA_TOKEN_LEGACY" ]; then
+          if [ -n "$SWA_TOKEN_LEGACY" ]; then
             echo "SWA_TOKEN=$SWA_TOKEN_LEGACY" >> "$GITHUB_ENV"
+          elif [ -n "$SWA_TOKEN_PRIMARY" ]; then
+            echo "SWA_TOKEN=$SWA_TOKEN_PRIMARY" >> "$GITHUB_ENV"
           fi
 
       - name: Close Pull Request
