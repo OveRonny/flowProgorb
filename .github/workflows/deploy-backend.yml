@@ -70,7 +70,8 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          auth-type: oidc
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_A3FE6FA0EB3C4FB1A904A24E793784CC }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_002F50EAA7DA43F4BE1E622D56BA152E }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_06602A59FF87467483AB0531DCD5A3AD }}
 
       # Deploy backend til Azure App Service
