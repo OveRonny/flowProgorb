@@ -15,7 +15,7 @@ const auth = useAuthStore()
 
 function getRedirectTarget() {
   const redirect = route.query.redirect
-  return typeof redirect === 'string' && redirect.startsWith('/') ? redirect : '/project'
+  return typeof redirect === 'string' && redirect.startsWith('/') ? redirect : '/'
 }
 
 async function handleLogin(credentials) {

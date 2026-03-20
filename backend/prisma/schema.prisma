@@ -19,6 +19,8 @@ model User {
   githubLogin String?   @unique
   projectMemberships ProjectMember[]
   assignedTasks      Task[]
+  meetingAttendances CustomerMeeting[] @relation("MeetingAttendees")
+  createdAt DateTime @default(now())
 }
 
 model ProjectMember {
@@ -64,6 +66,9 @@ model Project {
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
   activities          Activity[]
+  customerMeetings    CustomerMeeting[]
+  requirements Requirement[]
+  milestones   Milestone[]
  
 }
 
@@ -111,6 +116,9 @@ model Feature {
   githubPRState    String?
   githubSyncedAt   DateTime?
   orderIndex       Int?
+
+  requirement   Requirement? @relation(fields: [requirementId], references: [id])
+  requirementId Int?
 
   tasks        Task[]
   technologies Technology[]
@@ -188,6 +196,7 @@ model Activity {
 
   project   Project @relation(fields: [projectId], references: [id])
   projectId Int
+  metadata Json?
 
   createdAt DateTime @default(now())
 }
@@ -197,7 +206,75 @@ enum ActivityType {
   TASK_COMPLETED
   FEATURE_CREATED
   FEATURE_COMPLETED
+  REQUIREMENT_CREATED
+  REQUIREMENT_APPROVED
+  MILESTONE_COMPLETED
+  CUSTOMER_MEETING_LOGGED
   PROJECT_UPDATED
+}
+
+model CustomerMeeting {
+  id        Int       @id @default(autoincrement())
+  project   Project   @relation(fields: [projectId], references: [id])
+  projectId Int
+
+  title     String
+  notes     String?
+  date      DateTime @default(now())
+
+  attendees User[] @relation("MeetingAttendees")
+  requirements Requirement[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Requirement {
+  id          Int       @id @default(autoincrement())
+  project     Project   @relation(fields: [projectId], references: [id])
+  projectId   Int
+
+  title       String
+  description String?
+  priority    Int?
+
+  status RequirementStatus @default(OPEN)
+  
+  meeting   CustomerMeeting? @relation(fields: [meetingId], references: [id])
+  meetingId Int?
+
+  features  Feature[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+}
+
+enum RequirementStatus {
+  OPEN
+  APPROVED
+  IMPLEMENTED
+  REJECTED
+}
+
+model Milestone {
+  id          Int       @id @default(autoincrement())
+  project     Project   @relation(fields: [projectId], references: [id])
+  projectId   Int
+
+  title       String
+  description String?
+  dueDate     DateTime?
+
+  completed   Boolean @default(false)
+
+  orderIndex  Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
 }
 
 

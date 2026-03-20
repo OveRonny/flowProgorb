@@ -28,6 +28,18 @@
           >
             {{ link.label }}
           </router-link>
+
+          <!-- Planning link -->
+          <router-link
+            v-if="auth.token && projectIdFromRoute"
+            :to="{ name: 'ProjectPlanning', params: { id: projectIdFromRoute } }"
+            class="rounded-lg px-3 py-2 text-sm font-medium transition"
+            :class="route.name === 'ProjectPlanning'
+              ? 'bg-amber-600 text-white shadow-sm'
+              : 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:hover:bg-amber-900/50'"
+          >
+            Project Planning
+          </router-link>
         </div>
 
         <div class="flex flex-wrap items-center gap-2 lg:justify-end">
@@ -79,18 +91,24 @@ defineEmits(['toggle-theme'])
 
 const visibleLinks = computed(() => {
   const baseLinks = [
-    { to: '/', label: 'Dashboard' },
-    { to: '/project', label: 'Projects' }
+    { to: '/', label: 'Dashboard' }
   ]
 
   if (auth.token) {
     return [
       ...baseLinks,
+      { to: '/development', label: 'Development' },
+      { to: '/planning-overview', label: 'Planning' },
       { to: '/module', label: 'Modules' },
       { to: '/technology', label: 'Technologies' }
     ]
   }
 
   return baseLinks
+})
+
+const projectIdFromRoute = computed(() => {
+  const match = route.path.match(/\/project\/(\d+)/)
+  return match ? match[1] : null
 })
 </script>

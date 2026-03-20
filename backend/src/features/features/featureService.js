@@ -27,7 +27,7 @@ export async function getAllFeaturesService(projectId, userId) {
 
   return prisma.feature.findMany({
     where: { projectId },
-    include: { technologies: true, tasks: true }
+    include: { technologies: true, tasks: true, requirement: true }
   });
 }
 
@@ -41,7 +41,7 @@ export async function getFeatureByIdService(projectId, featureId, userId) {
       id: featureId,
       projectId
     },
-    include: { technologies: true, tasks: true }
+    include: { technologies: true, tasks: true, requirement: true }
   });
 }
 
@@ -52,6 +52,9 @@ export async function createFeatureService(projectId, data, userId) {
 
   const { moduleId, name, description, technologyIds } = data;
   const normalizedModuleId = Number(moduleId);
+  const normalizedRequirementId = data.requirementId != null && data.requirementId !== ''
+    ? Number(data.requirementId)
+    : null;
 
   const module = await prisma.module.findFirst({
     where: {
@@ -65,10 +68,25 @@ export async function createFeatureService(projectId, data, userId) {
     throw new Error('Module not found for this project');
   }
 
+  if (normalizedRequirementId != null) {
+    const requirement = await prisma.requirement.findFirst({
+      where: {
+        id: normalizedRequirementId,
+        projectId
+      },
+      select: { id: true }
+    });
+
+    if (!requirement) {
+      throw new Error('Requirement not found for this project');
+    }
+  }
+
   return prisma.feature.create({
     data: {
       projectId,
       moduleId: normalizedModuleId,
+      requirementId: normalizedRequirementId,
       name,
       description: description ?? null,
       technologies: technologyIds
@@ -76,7 +94,7 @@ export async function createFeatureService(projectId, data, userId) {
         : undefined,
       status: 'PLANNED'
     },
-    include: { technologies: true, tasks: true }
+    include: { technologies: true, tasks: true, requirement: true }
   });
 }
 
@@ -109,6 +127,26 @@ export async function updateFeatureService(projectId, featureId, data, userId) {
       .map(id => Number(id))
       .filter(id => Number.isInteger(id) && id > 0)
     : [];
+  const hasRequirementId = Object.prototype.hasOwnProperty.call(data, 'requirementId');
+  const normalizedRequirementId = hasRequirementId
+    ? data.requirementId === null || data.requirementId === ''
+      ? null
+      : Number(data.requirementId)
+    : undefined;
+
+  if (normalizedRequirementId != null) {
+    const requirement = await prisma.requirement.findFirst({
+      where: {
+        id: normalizedRequirementId,
+        projectId
+      },
+      select: { id: true }
+    });
+
+    if (!requirement) {
+      throw new Error('Requirement not found for this project');
+    }
+  }
 
   return prisma.feature.update({
     where: {
@@ -116,6 +154,7 @@ export async function updateFeatureService(projectId, featureId, data, userId) {
     },
     data: {
       moduleId: data.moduleId !== undefined ? Number(data.moduleId) : undefined,
+      requirementId: normalizedRequirementId,
       name: data.name,
       description: data.description,
       status: data.status,
@@ -133,7 +172,7 @@ export async function updateFeatureService(projectId, featureId, data, userId) {
         }
         : undefined
     },
-    include: { technologies: true, tasks: true }
+    include: { technologies: true, tasks: true, requirement: true }
   });
 }
 

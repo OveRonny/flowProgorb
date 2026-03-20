@@ -30,7 +30,7 @@ onMounted(() => {
   if (token) {
     auth.token = token
     localStorage.setItem('token', token)
-    router.push('/project')
+    router.push('/')
   } else {
     error.value = 'No token received'
     setTimeout(() => router.push('/login'), 3000)

@@ -1,76 +1,80 @@
 <template>
-    <div class="min-h-screen bg-gray-100 dark:bg-gray-900 p-6">
-        <div class="max-w-4xl mx-auto space-y-6">
-            <div v-if="project" class="bg-white dark:bg-gray-800 p-5 rounded shadow">
-                <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">{{ project.name }}</h1>
-                <p class="text-gray-600 dark:text-gray-400 mb-2">{{ project.description || 'Ingen beskrivelse' }}</p>
+    <div class="min-h-screen bg-gray-100 p-6 dark:bg-gray-900">
+        <div class="mx-auto max-w-5xl space-y-6">
+            <div v-if="project" class="rounded bg-white p-5 shadow dark:bg-gray-800">
+                <h1 class="mb-2 text-2xl font-bold text-gray-800 dark:text-gray-200">{{ project.name }}</h1>
+                <p class="mb-2 text-gray-600 dark:text-gray-400">{{ project.description || 'Ingen beskrivelse' }}</p>
                 <p class="text-gray-600 dark:text-gray-400">
                     Status: {{ project.status }} |
-                    Deadline: {{ project.deadline ? new Date(project.deadline).toLocaleDateString('no-NO') : 'Ikke satt'
-                    }}
+                    Deadline: {{ project.deadline ? new Date(project.deadline).toLocaleDateString('no-NO') : 'Ikke satt' }}
                 </p>
-                <div class="w-full bg-gray-200 dark:bg-gray-700 h-3 rounded-full mt-3">
-                    <div class="bg-blue-500 h-3 rounded-full transition-all"
-                        :style="{ width: projectProgressPercent + '%' }"></div>
+                <div class="mt-3 h-3 w-full rounded-full bg-gray-200 dark:bg-gray-700">
+                    <div class="h-3 rounded-full bg-blue-500 transition-all" :style="{ width: projectProgressPercent + '%' }"></div>
                 </div>
                 <p class="mt-2 text-gray-700 dark:text-gray-300">{{ projectProgressPercent }}% ferdig</p>
             </div>
-            <div>
-                <h2>Features</h2>
-                <button class="bg-blue-500 text-white px-4 py-2 rounded mb-4" @click="showModal = true">Legg til
-                    Feature</button>
-            </div>
+
             <div v-if="project" class="rounded border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
                 <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">GitHub Repo</h3>
-                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                    {{ githubRepoText }}
-                </p>
+                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ githubRepoText }}</p>
                 <div class="mt-3 flex flex-wrap items-center gap-2">
                     <input
                         v-model="repoUrl"
                         placeholder="https://github.com/owner/repo"
                         class="min-w-65 flex-1 rounded border border-gray-300 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                     />
-                    <button
-                        @click="connectGithubRepo"
-                        class="rounded bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-black"
-                    >
-                        Connect
-                    </button>
-                    <button
-                        @click="loadGithubRepo"
-                        class="rounded bg-gray-200 px-3 py-2 text-sm font-medium text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
-                    >
-                        Refresh
-                    </button>
+                    <button @click="connectGithubRepo" class="rounded bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-black">Connect</button>
+                    <button @click="loadGithubRepo" class="rounded bg-gray-200 px-3 py-2 text-sm font-medium text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600">Refresh</button>
                 </div>
-                <p v-if="githubRepoInfo" class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                    {{ githubRepoInfo }}
-                </p>
+                <p v-if="githubRepoInfo" class="mt-2 text-xs text-gray-500 dark:text-gray-400">{{ githubRepoInfo }}</p>
             </div>
+
             <p v-if="projectStore.error" class="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
                 {{ projectStore.error }}
             </p>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <FeatureCard v-for="feature in projectFeatures" :key="feature.id" :feature="feature" :githubConnected="isGithubConnected" @edit="handleEdit"
-                    @delete="handleDelete" @viewTasks="goToTasks(feature.id)" @createIssue="createIssue"
-                    @syncIssue="syncIssue" />
 
+            <div class="flex items-center justify-between">
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Features</h2>
+                <router-link :to="{ name: 'ProjectPlanning', params: { id: project?.id } }" class="rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-black">
+                    Open Planning
+                </router-link>
             </div>
+
+            <button class="mb-4 rounded bg-blue-500 px-4 py-2 text-white" @click="showFeatureModal = true">Legg til Feature</button>
+
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+                <FeatureCard
+                    v-for="feature in projectFeatures"
+                    :key="feature.id"
+                    :feature="feature"
+                    :githubConnected="isGithubConnected"
+                    @edit="handleEdit"
+                    @delete="handleDelete"
+                    @viewTasks="goToTasks(feature.id)"
+                    @createIssue="createIssue"
+                    @syncIssue="syncIssue"
+                />
+            </div>
+
             <p v-if="project && projectFeatures.length === 0 && !projectStore.loading" class="rounded border border-gray-200 bg-white px-4 py-6 text-center text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
                 Ingen features funnet for dette prosjektet.
             </p>
-            <Modal v-model="showModal" :title="editingFeature ? 'Rediger Feature' : 'Ny Feature'">
-                <FeatureForm :key="editingFeature ? editingFeature.id : 'new'" :feature="editingFeature"
-                    :projectModules="modules" :technologies="allTechnologies"
-                    @submit="editingFeature ? handleUpdate($event) : handleCreate($event)" />
+
+            <Modal v-model="showFeatureModal" :title="editingFeature ? 'Rediger Feature' : 'Ny Feature'">
+                <FeatureForm
+                    :key="editingFeature ? editingFeature.id : 'new'"
+                    :feature="editingFeature"
+                    :projectModules="modules"
+                    :technologies="allTechnologies"
+                    @submit="editingFeature ? handleUpdate($event) : handleCreate($event)"
+                />
             </Modal>
         </div>
     </div>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProjectsStore } from '../../projects/store.js'
 import { useTechnologiesStore } from '../../technologies/store.js'
@@ -85,39 +89,38 @@ const router = useRouter()
 const projectStore = useProjectsStore()
 const technoStore = useTechnologiesStore()
 const moduleStore = useModulesStore()
+
 const editingFeature = ref(null)
-const showModal = ref(false)
+const showFeatureModal = ref(false)
 const repoUrl = ref('')
 
 const project = computed(() => projectStore.project)
-
-const goToTasks = (featureId) => {
-        router.push({ path: `/features/${featureId}/tasks`, query: { projectId: project.value?.id } })
-}
-
 const allTechnologies = computed(() => technoStore.technologies)
-const projectFeatures = computed(() => (project.value?.features || []).filter(feature => feature && feature.id != null))
+const projectFeatures = computed(() => (project.value?.features || []).filter((feature) => feature && feature.id != null))
 const modules = computed(() => moduleStore.modules || [])
-const isGithubConnected = computed(() =>
-    Boolean(project.value?.githubOwner && project.value?.githubRepoName)
-)
+const isGithubConnected = computed(() => Boolean(project.value?.githubOwner && project.value?.githubRepoName))
+
 const githubRepoText = computed(() => {
     if (!project.value?.githubOwner || !project.value?.githubRepoName) {
         return 'Not connected'
     }
+
     return `${project.value.githubOwner}/${project.value.githubRepoName}`
 })
+
 const githubRepoInfo = computed(() => {
     const repo = projectStore.githubRepo?.repo
     if (!repo) {
         return ''
     }
+
     return `${repo.fullName} | default: ${repo.defaultBranch}`
 })
+
 const projectProgressPercent = computed(() => {
     const features = projectFeatures.value
-
     const allTasks = features.flatMap((feature) => feature.tasks || [])
+
     if (allTasks.length > 0) {
         return calculateTaskCollectionProgress(allTasks)
     }
@@ -129,6 +132,10 @@ const projectProgressPercent = computed(() => {
 
     return Number(project.value?.progress) || 0
 })
+
+const goToTasks = (featureId) => {
+    router.push({ path: `/features/${featureId}/tasks`, query: { projectId: project.value?.id } })
+}
 
 const loadFeaturePage = async () => {
     const projectId = Number(route.params.id)
@@ -157,44 +164,44 @@ watch(
 )
 
 const handleCreate = async (feature) => {
-    await projectStore.createProjectFeature(project.value.id, feature)
+    const created = await projectStore.createProjectFeature(project.value.id, feature)
+    if (!created) {
+        return
+    }
 
     await projectStore.fetchProjectById(project.value.id)
-
-    showModal.value = false
+    showFeatureModal.value = false
 }
 
-const handleEdit = async (feature) => {
+const handleEdit = (feature) => {
     editingFeature.value = feature
-    showModal.value = true
+    showFeatureModal.value = true
 }
 
 const handleUpdate = async (feature) => {
-    const featureId = editingFeature.value.id
+    const updated = await projectStore.updateProjectFeature(project.value.id, editingFeature.value.id, {
+        name: feature.name,
+        description: feature.description,
+        moduleId: feature.moduleId,
+        technologyIds: feature.technologyIds
+    })
 
-    await projectStore.updateProjectFeature(
-        project.value.id,
-        featureId,
-        {
-            name: feature.name,
-            description: feature.description,
-            moduleId: feature.moduleId,
-            technologyIds: feature.technologyIds
-        }
-    )
+    if (!updated) {
+        return
+    }
 
     await projectStore.fetchProjectById(project.value.id)
-
     editingFeature.value = null
-    showModal.value = false
+    showFeatureModal.value = false
 }
 
 const handleDelete = async (feature) => {
-    if (confirm('Slette denne featuren?')) {
-        await projectStore.deleteProjectFeature(project.value.id, feature.id)
-
-        await projectStore.fetchProjectById(project.value.id)
+    if (!confirm('Slette denne featuren?')) {
+        return
     }
+
+    await projectStore.deleteProjectFeature(project.value.id, feature.id)
+    await projectStore.fetchProjectById(project.value.id)
 }
 
 const connectGithubRepo = async () => {
@@ -216,11 +223,7 @@ const connectGithubRepo = async () => {
 
 const loadGithubRepo = async () => {
     const projectId = Number(project.value?.id)
-    if (!projectId) {
-        return
-    }
-
-    if (!project.value?.githubOwner || !project.value?.githubRepoName) {
+    if (!projectId || !project.value?.githubOwner || !project.value?.githubRepoName) {
         return
     }
 
@@ -232,6 +235,7 @@ const createIssue = async (feature) => {
     if (!projectId || !feature?.id) {
         return
     }
+
     const created = await projectStore.createGithubIssueForFeature(projectId, feature.id, {
         title: feature.name,
         body: feature.description || ''
@@ -239,6 +243,7 @@ const createIssue = async (feature) => {
     if (!created) {
         return
     }
+
     await projectStore.fetchProjectById(projectId)
 }
 
@@ -247,10 +252,12 @@ const syncIssue = async (feature) => {
     if (!projectId || !feature?.id) {
         return
     }
+
     const synced = await projectStore.syncGithubIssueForFeature(projectId, feature.id)
     if (!synced) {
         return
     }
+
     await projectStore.fetchProjectById(projectId)
 }
 </script>

@@ -3,10 +3,17 @@ import {
   createWebHistory
 } from "vue-router"
 import MainLayout from "../components/MainLayout.vue"
+import DashboardView from "../views/DashboardView.vue"
 import LoginView from "../features/auth/views/LoginView.vue"
 import RegisterPage from '../features/auth/views/RegisterView.vue'
 import GitHubCallbackView from '../features/auth/views/GitHubCallbackView.vue'
 import ProjectView from '../features/projects/views/ProjectView.vue'
+import PlanningView from '../features/projects/views/PlanningView.vue'
+import RequirementDetailView from '../features/projects/views/RequirementDetailView.vue'
+import MilestoneDetailView from '../features/projects/views/MilestoneDetailView.vue'
+import MeetingDetailView from '../features/projects/views/MeetingDetailView.vue'
+import DevelopmentView from '../features/development/views/DevelopmentView.vue'
+import PlanningOverviewView from '../features/development/views/PlanningOverviewView.vue'
 import TechnologyView from "@/features/technologies/views/TechnologyView.vue"
 import FeatureView from "@/features/features/views/FeatureView.vue"
 import ModuleView from "@/features/modules/views/ModuleView.vue"
@@ -51,7 +58,26 @@ const routes = [{
   {
     path: "/",
     name: "Home",
-    component: MainLayout
+    component: DashboardView,
+    meta: {
+      requiresAuth: true
+    }
+  },
+  {
+    path: "/development",
+    name: "Development",
+    component: DevelopmentView,
+    meta: {
+      requiresAuth: true
+    }
+  },
+  {
+    path: "/planning-overview",
+    name: "PlanningOverview",
+    component: PlanningOverviewView,
+    meta: {
+      requiresAuth: true
+    }
   },
   {
     path: "/project",
@@ -74,6 +100,38 @@ const routes = [{
     path: '/project/:id',
     component: FeatureView,
     name: 'Features',
+    meta: {
+      requiresAuth: true
+    },
+  },
+  {
+    path: '/project/:id/planning',
+    component: PlanningView,
+    name: 'ProjectPlanning',
+    meta: {
+      requiresAuth: true
+    },
+  },
+  {
+    path: '/project/:projectId/requirement/:id',
+    component: RequirementDetailView,
+    name: 'RequirementDetail',
+    meta: {
+      requiresAuth: true
+    },
+  },
+  {
+    path: '/project/:projectId/milestone/:id',
+    component: MilestoneDetailView,
+    name: 'MilestoneDetail',
+    meta: {
+      requiresAuth: true
+    },
+  },
+  {
+    path: '/project/:projectId/meeting/:id',
+    component: MeetingDetailView,
+    name: 'MeetingDetail',
     meta: {
       requiresAuth: true
     },

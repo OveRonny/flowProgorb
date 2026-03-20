@@ -269,6 +269,9 @@ export async function deleteProjectService(id, userId) {
       }
 
       await tx.module.deleteMany({ where: { projectId: id } });
+      await tx.milestone.deleteMany({ where: { projectId: id } });
+      await tx.requirement.deleteMany({ where: { projectId: id } });
+      await tx.customerMeeting.deleteMany({ where: { projectId: id } });
       await tx.activity.deleteMany({ where: { projectId: id } });
       await tx.projectMember.deleteMany({ where: { projectId: id } });
 

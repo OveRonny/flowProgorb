@@ -4,6 +4,7 @@ import {
 import {
     fetchProjects,
     fetchProjectById,
+    fetchProjectPlanning,
     createProject,
     updateProject,
     deleteProject,
@@ -13,13 +14,23 @@ import {
     connectProjectGithubRepo,
     fetchProjectGithubRepo,
     createFeatureGithubIssue,
-    syncFeatureGithubIssue
+    syncFeatureGithubIssue,
+    createRequirement,
+    updateRequirement,
+    deleteRequirement,
+    createMilestone,
+    updateMilestone,
+    deleteMilestone,
+    createCustomerMeeting,
+    updateCustomerMeeting,
+    deleteCustomerMeeting
 } from './api'
 
 export const useProjectsStore = defineStore('projects', {
     state: () => ({
         projects: [],
         project: null,
+        planningProject: null,
         githubRepo: null,
         tasks: {},
         loading: false,
@@ -47,6 +58,19 @@ export const useProjectsStore = defineStore('projects', {
                 return project
             } catch (err) {
                 this.error = err.response?.data?.message || 'Failed to load project'
+            } finally {
+                this.loading = false
+            }
+        },
+        async fetchProjectPlanning(projectId) {
+            this.loading = true
+            this.error = null
+            try {
+                const project = await fetchProjectPlanning(projectId)
+                this.planningProject = project
+                return project
+            } catch (err) {
+                this.error = err.response?.data?.message || 'Failed to load project planning'
             } finally {
                 this.loading = false
             }
@@ -196,6 +220,111 @@ export const useProjectsStore = defineStore('projects', {
             } catch (err) {
                 this.error = err.response?.data?.message || 'Failed to sync GitHub issue'
                 return null
+            } finally {
+                this.loading = false
+            }
+        },
+        async createRequirement(projectId, payload) {
+            this.loading = true
+            this.error = null
+            try {
+                return await createRequirement(projectId, payload)
+            } catch (err) {
+                this.error = err.response?.data?.message || 'Failed to create requirement'
+                return null
+            } finally {
+                this.loading = false
+            }
+        },
+        async updateRequirement(projectId, requirementId, payload) {
+            this.loading = true
+            this.error = null
+            try {
+                return await updateRequirement(projectId, requirementId, payload)
+            } catch (err) {
+                this.error = err.response?.data?.message || 'Failed to update requirement'
+                return null
+            } finally {
+                this.loading = false
+            }
+        },
+        async deleteRequirement(projectId, requirementId) {
+            this.loading = true
+            this.error = null
+            try {
+                await deleteRequirement(projectId, requirementId)
+            } catch (err) {
+                this.error = err.response?.data?.message || 'Failed to delete requirement'
+            } finally {
+                this.loading = false
+            }
+        },
+        async createMilestone(projectId, payload) {
+            this.loading = true
+            this.error = null
+            try {
+                return await createMilestone(projectId, payload)
+            } catch (err) {
+                this.error = err.response?.data?.message || 'Failed to create milestone'
+                return null
+            } finally {
+                this.loading = false
+            }
+        },
+        async updateMilestone(projectId, milestoneId, payload) {
+            this.loading = true
+            this.error = null
+            try {
+                return await updateMilestone(projectId, milestoneId, payload)
+            } catch (err) {
+                this.error = err.response?.data?.message || 'Failed to update milestone'
+                return null
+            } finally {
+                this.loading = false
+            }
+        },
+        async deleteMilestone(projectId, milestoneId) {
+            this.loading = true
+            this.error = null
+            try {
+                await deleteMilestone(projectId, milestoneId)
+            } catch (err) {
+                this.error = err.response?.data?.message || 'Failed to delete milestone'
+            } finally {
+                this.loading = false
+            }
+        },
+        async createCustomerMeeting(projectId, payload) {
+            this.loading = true
+            this.error = null
+            try {
+                return await createCustomerMeeting(projectId, payload)
+            } catch (err) {
+                this.error = err.response?.data?.message || 'Failed to create customer meeting'
+                return null
+            } finally {
+                this.loading = false
+            }
+        },
+        async updateCustomerMeeting(projectId, meetingId, payload) {
+            this.loading = true
+            this.error = null
+            try {
+                return await updateCustomerMeeting(projectId, meetingId, payload)
+            } catch (err) {
+                this.error = err.response?.data?.message || 'Failed to update customer meeting'
+                return null
+            } finally {
+                this.loading = false
+            }
+        },
+        async deleteCustomerMeeting(projectId, meetingId) {
+            this.loading = true
+            this.error = null
+            try {
+                await deleteCustomerMeeting(projectId, meetingId)
+            } catch (err) {
+                this.error = err.response?.data?.message || 'Failed to delete customer meeting'
             } finally {
                 this.loading = false
             }

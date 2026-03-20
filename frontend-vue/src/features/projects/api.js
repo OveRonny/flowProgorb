@@ -10,6 +10,11 @@ export const fetchProjectById = async (projectId) => {
     return response.data;
 }
 
+export const fetchProjectPlanning = async (projectId) => {
+    const response = await api.get(`/projects/${projectId}/planning`)
+    return response.data
+}
+
 export const createProject = async (projectData) => {    
     const response = await api.post('/projects', projectData);
     return response.data;
@@ -56,4 +61,46 @@ export const createFeatureGithubIssue = async (projectId, featureId, payload = {
 export const syncFeatureGithubIssue = async (projectId, featureId) => {
     const response = await api.post(`/api/projects/${projectId}/features/${featureId}/github/issue/sync`);
     return response.data;
+}
+
+export const createRequirement = async (projectId, payload) => {
+    const response = await api.post(`/api/projects/${projectId}/requirements`, payload)
+    return response.data
+}
+
+export const updateRequirement = async (projectId, requirementId, payload) => {
+    const response = await api.put(`/api/projects/${projectId}/requirements/${requirementId}`, payload)
+    return response.data
+}
+
+export const deleteRequirement = async (projectId, requirementId) => {
+    await api.delete(`/api/projects/${projectId}/requirements/${requirementId}`)
+}
+
+export const createMilestone = async (projectId, payload) => {
+    const response = await api.post(`/api/projects/${projectId}/milestones`, payload)
+    return response.data
+}
+
+export const updateMilestone = async (projectId, milestoneId, payload) => {
+    const response = await api.put(`/api/projects/${projectId}/milestones/${milestoneId}`, payload)
+    return response.data
+}
+
+export const deleteMilestone = async (projectId, milestoneId) => {
+    await api.delete(`/api/projects/${projectId}/milestones/${milestoneId}`)
+}
+
+export const createCustomerMeeting = async (projectId, payload) => {
+    const response = await api.post(`/api/projects/${projectId}/customer-meetings`, payload)
+    return response.data
+}
+
+export const updateCustomerMeeting = async (projectId, meetingId, payload) => {
+    const response = await api.put(`/api/projects/${projectId}/customer-meetings/${meetingId}`, payload)
+    return response.data
+}
+
+export const deleteCustomerMeeting = async (projectId, meetingId) => {
+    await api.delete(`/api/projects/${projectId}/customer-meetings/${meetingId}`)
 }
