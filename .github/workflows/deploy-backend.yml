@@ -60,16 +60,30 @@ jobs:
             echo "should_configure=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Check Azure login secrets
+      - name: Select Azure auth mode
+        id: azure-auth
         env:
-          AZURE_CLIENT_ID: ${{ secrets.AZUREAPPSERVICE_CLIENTID_A3FE6FA0EB3C4FB1A904A24E793784CC }}
-          AZURE_TENANT_ID: ${{ secrets.AZUREAPPSERVICE_TENANTID_002F50EAA7DA43F4BE1E622D56BA152E }}
-          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_06602A59FF87467483AB0531DCD5A3AD }}
+          AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE || secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
+        run: |
+          if [ -n "$AZURE_WEBAPP_PUBLISH_PROFILE" ]; then
+            echo "mode=publish-profile" >> "$GITHUB_OUTPUT"
+            echo "Using publish profile deployment mode."
+          else
+            echo "mode=oidc" >> "$GITHUB_OUTPUT"
+            echo "Using OIDC deployment mode."
+          fi
+
+      - name: Check Azure login secrets
+        if: steps.azure-auth.outputs.mode == 'oidc'
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID || secrets.AZUREAPPSERVICE_CLIENTID_A3FE6FA0EB3C4FB1A904A24E793784CC }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID || secrets.AZUREAPPSERVICE_TENANTID_002F50EAA7DA43F4BE1E622D56BA152E }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID || secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_06602A59FF87467483AB0531DCD5A3AD }}
         run: |
           missing=""
-          if [ -z "$AZURE_CLIENT_ID" ]; then missing="$missing AZUREAPPSERVICE_CLIENTID_A3FE6FA0EB3C4FB1A904A24E793784CC"; fi
-          if [ -z "$AZURE_TENANT_ID" ]; then missing="$missing AZUREAPPSERVICE_TENANTID_002F50EAA7DA43F4BE1E622D56BA152E"; fi
-          if [ -z "$AZURE_SUBSCRIPTION_ID" ]; then missing="$missing AZUREAPPSERVICE_SUBSCRIPTIONID_06602A59FF87467483AB0531DCD5A3AD"; fi
+          if [ -z "$AZURE_CLIENT_ID" ]; then missing="$missing AZURE_CLIENT_ID"; fi
+          if [ -z "$AZURE_TENANT_ID" ]; then missing="$missing AZURE_TENANT_ID"; fi
+          if [ -z "$AZURE_SUBSCRIPTION_ID" ]; then missing="$missing AZURE_SUBSCRIPTION_ID"; fi
 
           if [ -n "$missing" ]; then
             echo "::error::Missing required Azure login secret(s):$missing"
@@ -77,14 +91,24 @@ jobs:
             exit 1
           fi
 
-      - name: Deploy to Azure App Service
+      - name: Azure login (OIDC)
+        if: steps.azure-auth.outputs.mode == 'oidc'
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_A3FE6FA0EB3C4FB1A904A24E793784CC }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_002F50EAA7DA43F4BE1E622D56BA152E }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_06602A59FF87467483AB0531DCD5A3AD }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID || secrets.AZUREAPPSERVICE_CLIENTID_A3FE6FA0EB3C4FB1A904A24E793784CC }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID || secrets.AZUREAPPSERVICE_TENANTID_002F50EAA7DA43F4BE1E622D56BA152E }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID || secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_06602A59FF87467483AB0531DCD5A3AD }}
 
-      - name: Deploy to Azure App Service
+      - name: Deploy to Azure App Service (publish profile)
+        if: steps.azure-auth.outputs.mode == 'publish-profile'
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: flowprogorb-api
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE || secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
+          package: backend
+
+      - name: Deploy to Azure App Service (OIDC)
+        if: steps.azure-auth.outputs.mode == 'oidc'
         uses: azure/webapps-deploy@v3
         with:
           app-name: flowprogorb-api
@@ -92,7 +116,7 @@ jobs:
 
       - name: Configure Azure App Service settings
         uses: azure/appservice-settings@v1
-        if: steps.check-secrets.outputs.should_configure == 'true'
+        if: steps.check-secrets.outputs.should_configure == 'true' && steps.azure-auth.outputs.mode == 'oidc'
         with:
           app-name: flowprogorb-api
           app-settings-json: |
@@ -113,3 +137,9 @@ jobs:
                 "slotSetting": false
               }
             ]
+
+      - name: App settings note for publish profile mode
+        if: steps.check-secrets.outputs.should_configure == 'true' && steps.azure-auth.outputs.mode == 'publish-profile'
+        run: |
+          echo "::warning::Deployment succeeded with publish profile mode."
+          echo "::warning::App settings update step was skipped because it requires Azure login permissions."
