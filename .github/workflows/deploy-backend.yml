@@ -15,7 +15,7 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write
+      id-token: write   # Nødvendig for OIDC
       contents: read
 
     defaults:
@@ -23,8 +23,10 @@ jobs:
         working-directory: backend
 
     steps:
+      # Sjekk ut koden
       - uses: actions/checkout@v4
 
+      # Sett opp Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -32,12 +34,15 @@ jobs:
           cache: 'npm'
           cache-dependency-path: backend/package-lock.json
 
+      # Installer dependencies
       - name: Install dependencies
         run: npm ci
 
+      # Generer Prisma client
       - name: Generate Prisma client
         run: npx prisma generate
 
+      # Kjør tester
       - name: Run tests
         run: npm test
         env:
@@ -45,6 +50,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
 
+      # Sjekk at nødvendige secrets finnes før vi setter App Service settings
       - name: Check deployment secrets
         id: check-secrets
         env:
@@ -59,19 +65,22 @@ jobs:
             echo "All required secrets are present."
             echo "should_configure=true" >> "$GITHUB_OUTPUT"
           fi
-      - name: Deploy to Azure App Service
+
+      # Login til Azure med OIDC
+      - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_A3FE6FA0EB3C4FB1A904A24E793784CC }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_002F50EAA7DA43F4BE1E622D56BA152E }}
+          auth-type: oidc
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_06602A59FF87467483AB0531DCD5A3AD }}
 
+      # Deploy backend til Azure App Service
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
           app-name: flowprogorb-api
           package: backend
 
+      # Konfigurer App Service settings hvis secrets finnes
       - name: Configure Azure App Service settings
         uses: azure/appservice-settings@v1
         if: steps.check-secrets.outputs.should_configure == 'true'
@@ -79,19 +88,7 @@ jobs:
           app-name: flowprogorb-api
           app-settings-json: |
             [
-              {
-                "name": "DATABASE_URL",
-                "value": "${{ secrets.DATABASE_URL }}",
-                "slotSetting": false
-              },
-              {
-                "name": "JWT_SECRET",
-                "value": "${{ secrets.JWT_SECRET }}",
-                "slotSetting": false
-              },
-              {
-                "name": "FRONTEND_URL",
-                "value": "${{ secrets.FRONTEND_URL }}",
-                "slotSetting": false
-              }
+              {"name": "DATABASE_URL", "value": "${{ secrets.DATABASE_URL }}", "slotSetting": false},
+              {"name": "JWT_SECRET", "value": "${{ secrets.JWT_SECRET }}", "slotSetting": false},
+              {"name": "FRONTEND_URL", "value": "${{ secrets.FRONTEND_URL }}", "slotSetting": false}
             ]
