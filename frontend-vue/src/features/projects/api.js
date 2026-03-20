@@ -11,8 +11,14 @@ export const fetchProjectById = async (projectId) => {
 }
 
 export const fetchProjectPlanning = async (projectId) => {
-    const response = await api.get(`/projects/${projectId}/planning`)
-    return response.data
+    try {
+        const response = await api.get(`/api/projects/${projectId}/planning`)
+        return response.data
+    } catch (firstError) {
+        // Backward compatibility for environments exposing routes without /api prefix.
+        const response = await api.get(`/projects/${projectId}/planning`)
+        return response.data
+    }
 }
 
 export const createProject = async (projectData) => {    

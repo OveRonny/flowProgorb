@@ -70,7 +70,7 @@ export const useProjectsStore = defineStore('projects', {
                 this.planningProject = project
                 return project
             } catch (err) {
-                this.error = err.response?.data?.message || 'Failed to load project planning'
+                this.error = err.response?.data?.message || err.response?.data?.error || 'Failed to load project planning'
             } finally {
                 this.loading = false
             }
