@@ -4,25 +4,24 @@ on:
   push:
     branches:
       - main
-      - staging
     paths:
       - 'backend/**'
       - '.github/workflows/deploy-backend.yml'
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  AZURE_WEBAPP_NAME: 'flowprogorb-api'
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write
       contents: read
 
     defaults:
       run:
         working-directory: backend
-
-    # Velg environment basert på branch
-    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -60,24 +59,20 @@ jobs:
           else
             echo "should_configure=true" >> "$GITHUB_OUTPUT"
           fi
-      - name: Deploy to Azure App Service
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_A3FE6FA0EB3C4FB1A904A24E793784CC }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_002F50EAA7DA43F4BE1E622D56BA152E }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_06602A59FF87467483AB0531DCD5A3AD }}
 
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ github.ref == 'refs/heads/main' && 'flowprogorb-api-prod' || 'flowprogorb-api-staging' }}
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
           package: backend
 
       - name: Configure Azure App Service settings
         if: steps.check-secrets.outputs.should_configure == 'true'
         uses: azure/appservice-settings@v1
         with:
-          app-name: ${{ github.ref == 'refs/heads/main' && 'flowprogorb-api-prod' || 'flowprogorb-api-staging' }}
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
           app-settings-json: |
             [
               {"name": "DATABASE_URL", "value": "${{ secrets.DATABASE_URL }}", "slotSetting": false},
