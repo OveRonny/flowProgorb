@@ -2,29 +2,33 @@ name: Deploy Backend to Azure App Service
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - staging
     paths:
       - 'backend/**'
       - '.github/workflows/deploy-backend.yml'
   workflow_dispatch:
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write
+      id-token: write   # Viktig for OIDC
       contents: read
 
     defaults:
       run:
         working-directory: backend
 
+    # Velg environment basert på branch
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+
     steps:
+      # 1️⃣ Sjekk ut kode
       - uses: actions/checkout@v4
 
+      # 2️⃣ Sett opp Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -32,12 +36,15 @@ jobs:
           cache: 'npm'
           cache-dependency-path: backend/package-lock.json
 
+      # 3️⃣ Installer dependencies
       - name: Install dependencies
         run: npm ci
 
+      # 4️⃣ Generer Prisma client
       - name: Generate Prisma client
         run: npx prisma generate
 
+      # 5️⃣ Kjør tester
       - name: Run tests
         run: npm test
         env:
@@ -45,6 +52,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
 
+      # 6️⃣ Sjekk at nødvendige secrets finnes
       - name: Check deployment secrets
         id: check-secrets
         env:
@@ -53,45 +61,36 @@ jobs:
           FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
         run: |
           if [ -z "$DATABASE_URL" ] || [ -z "$JWT_SECRET" ] || [ -z "$FRONTEND_URL" ]; then
-            echo "::warning::One or more secrets are missing. Azure App Settings update will be skipped to avoid overwriting existing values."
+            echo "::warning::Missing secrets. App Service settings update skipped."
             echo "should_configure=false" >> "$GITHUB_OUTPUT"
           else
-            echo "All required secrets are present."
             echo "should_configure=true" >> "$GITHUB_OUTPUT"
           fi
-      - name: Deploy to Azure App Service
+
+      # 7️⃣ Login til Azure med OIDC (ingen secret nødvendig)
+      - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_A3FE6FA0EB3C4FB1A904A24E793784CC }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_002F50EAA7DA43F4BE1E622D56BA152E }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_06602A59FF87467483AB0531DCD5A3AD }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      # 8️⃣ Deploy til Azure App Service
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
-          app-name: flowprogorb-api
+          app-name: ${{ github.ref == 'refs/heads/main' && 'flowprogorb-api-prod' || 'flowprogorb-api-staging' }}
           package: backend
 
+      # 9️⃣ Oppdater App Service settings hvis secrets finnes
       - name: Configure Azure App Service settings
-        uses: azure/appservice-settings@v1
         if: steps.check-secrets.outputs.should_configure == 'true'
+        uses: azure/appservice-settings@v1
         with:
-          app-name: flowprogorb-api
+          app-name: ${{ github.ref == 'refs/heads/main' && 'flowprogorb-api-prod' || 'flowprogorb-api-staging' }}
           app-settings-json: |
             [
-              {
-                "name": "DATABASE_URL",
-                "value": "${{ secrets.DATABASE_URL }}",
-                "slotSetting": false
-              },
-              {
-                "name": "JWT_SECRET",
-                "value": "${{ secrets.JWT_SECRET }}",
-                "slotSetting": false
-              },
-              {
-                "name": "FRONTEND_URL",
-                "value": "${{ secrets.FRONTEND_URL }}",
-                "slotSetting": false
-              }
+              {"name": "DATABASE_URL", "value": "${{ secrets.DATABASE_URL }}", "slotSetting": false},
+              {"name": "JWT_SECRET", "value": "${{ secrets.JWT_SECRET }}", "slotSetting": false},
+              {"name": "FRONTEND_URL", "value": "${{ secrets.FRONTEND_URL }}", "slotSetting": false}
             ]
