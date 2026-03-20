@@ -163,6 +163,17 @@ watch(
     { immediate: true }
 )
 
+watch(
+    () => route.query.create,
+    () => {
+        if (String(route.query.create || '').toLowerCase() === 'feature') {
+            editingFeature.value = null
+            showFeatureModal.value = true
+        }
+    },
+    { immediate: true }
+)
+
 const handleCreate = async (feature) => {
     const created = await projectStore.createProjectFeature(project.value.id, feature)
     if (!created) {

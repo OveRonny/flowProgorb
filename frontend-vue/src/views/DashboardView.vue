@@ -8,7 +8,7 @@
       </div>
 
       <!-- Stats Bar -->
-      <div v-if="currentProject" class="rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 p-6 text-white shadow-lg">
+      <div v-if="currentProject" class="rounded-lg bg-linear-to-r from-blue-500 to-blue-600 p-6 text-white shadow-lg">
         <div class="grid gap-4 md:grid-cols-5">
           <div class="space-y-1">
             <p class="text-sm font-medium opacity-90">Milestones</p>
@@ -54,16 +54,25 @@
 
       <div class="grid gap-6 lg:grid-cols-2">
         <!-- Planning Section -->
-        <section class="space-y-4">
-          <h2 class="flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-gray-100">
-            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-amber-600 text-sm font-bold text-white">1</span>
-            Kundemøter & Idéer
-          </h2>
+        <section class="space-y-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+          <div class="mb-1 flex items-center gap-2 border-b border-gray-200 pb-3 dark:border-gray-700">
+            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 text-sm font-bold text-white">1</span>
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Kundemoter & Ideer</h2>
+          </div>
 
           <div class="grid gap-4 md:grid-cols-2">
             <!-- Customer Meetings -->
-            <div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-              <h3 class="mb-3 font-semibold text-gray-900 dark:text-gray-100">Kundemøter</h3>
+            <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/40">
+              <div class="mb-3 flex items-center justify-between">
+                <h3 class="font-semibold text-gray-900 dark:text-gray-100">Kundemoter</h3>
+                <router-link
+                  v-if="targetProject"
+                  :to="createLinks.meeting"
+                  class="rounded bg-blue-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-blue-700"
+                >
+                  + New
+                </router-link>
+              </div>
               <div class="space-y-2">
                 <div
                   v-for="meeting in recentMeetings"
@@ -74,15 +83,29 @@
                     <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ meeting.title }}</p>
                     <p class="text-xs text-gray-500 dark:text-gray-400">{{ formatDate(meeting.date) }}</p>
                   </div>
-                  <span class="text-xs font-semibold text-gray-700 dark:text-gray-300">{{ meeting.attendees?.length || 0 }} attendes</span>
+                  <span class="text-xs font-semibold text-gray-700 dark:text-gray-300">{{ meeting.attendees?.length || 0 }} deltakere</span>
                 </div>
                 <p v-if="recentMeetings.length === 0" class="text-sm text-gray-500 dark:text-gray-400">Ingen møter planlagt</p>
               </div>
             </div>
 
             <!-- Requirements by Status -->
-            <div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-              <h3 class="mb-3 font-semibold text-gray-900 dark:text-gray-100">Idéer & Krav</h3>
+            <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/40">
+              <div class="mb-3 flex items-center justify-between">
+                <h3 class="font-semibold text-gray-900 dark:text-gray-100">Ideer & Krav</h3>
+                <router-link
+                  v-if="targetProject"
+                  :to="createLinks.requirement"
+                  class="rounded bg-blue-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-blue-700"
+                >
+                  + New Idea
+                </router-link>
+              </div>
+              <div class="mb-3 grid grid-cols-3 rounded-lg bg-gray-200 p-1 text-xs font-semibold dark:bg-gray-700">
+                <div class="rounded px-2 py-1 text-center text-gray-700 dark:text-gray-200">Open</div>
+                <div class="rounded px-2 py-1 text-center text-gray-700 dark:text-gray-200">Approved</div>
+                <div class="rounded px-2 py-1 text-center text-gray-700 dark:text-gray-200">Rejected</div>
+              </div>
               <div class="space-y-2">
                 <div v-for="status in ['OPEN', 'APPROVED', 'REJECTED']" :key="status" class="flex items-center justify-between">
                   <span class="text-sm text-gray-700 dark:text-gray-300">{{ statusLabel(status) }}</span>
@@ -101,13 +124,22 @@
         </section>
 
         <!-- Roadmap & Milestones -->
-        <section class="space-y-4">
-          <h2 class="flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-gray-100">
-            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">2</span>
-            Roadmap & Milepæler
-          </h2>
+        <section class="space-y-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+          <div class="mb-1 flex items-center gap-2 border-b border-gray-200 pb-3 dark:border-gray-700">
+            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 text-sm font-bold text-white">2</span>
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Roadmap & Milepaler</h2>
+          </div>
 
-          <div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+          <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/40">
+            <div class="mb-3 flex items-center justify-end">
+              <router-link
+                v-if="targetProject"
+                :to="createLinks.milestone"
+                class="rounded bg-blue-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-blue-700"
+              >
+                + New Milestone
+              </router-link>
+            </div>
             <div class="space-y-4">
               <div
                 v-for="milestone in upcomingMilestones"
@@ -135,17 +167,26 @@
         </section>
 
         <!-- Development Board -->
-        <section class="space-y-4 lg:col-span-2">
-          <h2 class="flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-gray-100">
-            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-purple-600 text-sm font-bold text-white">3</span>
-            Utviklingsboard
-          </h2>
+        <section class="space-y-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 lg:col-span-2">
+          <div class="mb-1 flex items-center justify-between gap-2 border-b border-gray-200 pb-3 dark:border-gray-700">
+            <div class="flex items-center gap-2">
+              <span class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 text-sm font-bold text-white">3</span>
+              <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Utviklingsboard</h2>
+            </div>
+            <router-link
+              v-if="targetProject"
+              :to="createLinks.feature"
+              class="rounded bg-blue-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-blue-700"
+            >
+              + New Feature
+            </router-link>
+          </div>
 
           <div class="grid gap-4 md:grid-cols-3">
             <div
               v-for="status in ['PENDING', 'IN_PROGRESS', 'DONE']"
               :key="status"
-              class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800"
+              class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/40"
             >
               <h3 class="mb-3 flex items-center justify-between font-semibold text-gray-900 dark:text-gray-100">
                 {{ taskStatusLabel(status) }}
@@ -166,14 +207,23 @@
               </div>
             </div>
           </div>
+          <div class="flex justify-end">
+            <router-link
+              v-if="createLinks.task"
+              :to="createLinks.task"
+              class="rounded bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+            >
+              + New Task
+            </router-link>
+          </div>
         </section>
 
         <!-- Project Overview & Recent Activity -->
-        <section class="space-y-4 lg:col-span-2">
-          <h2 class="flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-gray-100">
-            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-orange-600 text-sm font-bold text-white">4</span>
-            Projekstoversikt
-          </h2>
+        <section class="space-y-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 lg:col-span-2">
+          <div class="mb-1 flex items-center gap-2 border-b border-gray-200 pb-3 dark:border-gray-700">
+            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 text-sm font-bold text-white">4</span>
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Prosjektoversikt</h2>
+          </div>
 
           <div class="grid gap-4 md:grid-cols-2">
             <!-- Projects List -->
@@ -235,6 +285,37 @@ const projects = computed(() => projectStore.projects || [])
 const currentProject = computed(() => {
   if (!selectedProjectId.value) return null
   return projects.value.find((p) => p.id === selectedProjectId.value)
+})
+
+const targetProject = computed(() => {
+  if (currentProject.value) {
+    return currentProject.value
+  }
+
+  return projects.value[0] || null
+})
+
+const createLinks = computed(() => {
+  const project = targetProject.value
+  if (!project) {
+    return {
+      meeting: '/',
+      requirement: '/',
+      milestone: '/',
+      feature: '/',
+      task: null
+    }
+  }
+
+  const firstFeature = (project.features || [])[0]
+
+  return {
+    meeting: { name: 'ProjectPlanning', params: { id: project.id }, query: { create: 'meeting' } },
+    requirement: { name: 'ProjectPlanning', params: { id: project.id }, query: { create: 'requirement' } },
+    milestone: { name: 'ProjectPlanning', params: { id: project.id }, query: { create: 'milestone' } },
+    feature: { name: 'Features', params: { id: project.id }, query: { create: 'feature' } },
+    task: firstFeature ? { path: `/features/${firstFeature.id}/tasks`, query: { projectId: project.id, create: 'task' } } : null
+  }
 })
 
 const allMeetings = computed(() => {

@@ -111,7 +111,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTasksStore } from '../store'
 import TaskCard from '../components/TaskCard.vue'
@@ -203,6 +203,16 @@ onUnmounted(() => {
         refreshIntervalId = null
     }
 })
+
+watch(
+    () => route.query.create,
+    () => {
+        if (String(route.query.create || '').toLowerCase() === 'task') {
+            showModal.value = true
+        }
+    },
+    { immediate: true }
+)
 
 const goToFeatures = () => {
     if (!featuresPath.value) return

@@ -179,6 +179,26 @@ const openMeetingModal = (meeting = null) => {
   showMeetingModal.value = true
 }
 
+watch(
+  () => route.query.create,
+  () => {
+    const createTarget = String(route.query.create || '').toLowerCase()
+
+    if (createTarget === 'requirement') {
+      openRequirementModal()
+    }
+
+    if (createTarget === 'milestone') {
+      openMilestoneModal()
+    }
+
+    if (createTarget === 'meeting') {
+      openMeetingModal()
+    }
+  },
+  { immediate: true }
+)
+
 const handleCreateRequirement = async (payload) => {
   const created = await projectStore.createRequirement(project.value.id, payload)
   if (!created) {
