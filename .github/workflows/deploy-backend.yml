@@ -14,6 +14,9 @@ env:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
 
     defaults:
       run:
@@ -42,18 +45,103 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
 
-      - name: Deploy to Azure App Service
+      - name: Select Azure auth mode
+        id: azure-auth
+        env:
+          AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE || secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
+        run: |
+          if [ -n "$AZURE_WEBAPP_PUBLISH_PROFILE" ]; then
+            echo "mode=publish-profile" >> "$GITHUB_OUTPUT"
+            echo "Using publish profile deployment mode."
+          else
+            echo "mode=oidc" >> "$GITHUB_OUTPUT"
+            echo "Using OIDC deployment mode."
+          fi
+
+      - name: Check Azure deploy secrets
+        env:
+          AZURE_WEBAPP_NAME: ${{ secrets.AZURE_WEBAPP_NAME || 'flowprogorb-api' }}
+          AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE || secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID || secrets.AZUREAPPSERVICE_CLIENTID_A3FE6FA0EB3C4FB1A904A24E793784CC }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID || secrets.AZUREAPPSERVICE_TENANTID_002F50EAA7DA43F4BE1E622D56BA152E }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID || secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_06602A59FF87467483AB0531DCD5A3AD }}
+          AZURE_AUTH_MODE: ${{ steps.azure-auth.outputs.mode }}
+        run: |
+          if [ -z "$AZURE_WEBAPP_NAME" ]; then
+            echo "::error::Missing Azure Web App name. Set AZURE_WEBAPP_NAME."
+            exit 1
+          fi
+
+          if [ "$AZURE_AUTH_MODE" = "publish-profile" ] && [ -z "$AZURE_WEBAPP_PUBLISH_PROFILE" ]; then
+            echo "::error::Missing publish profile secret. Set AZURE_WEBAPP_PUBLISH_PROFILE (or AZUREAPPSERVICE_PUBLISHPROFILE)."
+            exit 1
+          fi
+
+          if [ "$AZURE_AUTH_MODE" = "oidc" ]; then
+            missing=""
+            if [ -z "$AZURE_CLIENT_ID" ]; then missing="$missing AZURE_CLIENT_ID"; fi
+            if [ -z "$AZURE_TENANT_ID" ]; then missing="$missing AZURE_TENANT_ID"; fi
+            if [ -z "$AZURE_SUBSCRIPTION_ID" ]; then missing="$missing AZURE_SUBSCRIPTION_ID"; fi
+
+            if [ -n "$missing" ]; then
+              echo "::error::Missing OIDC secret(s):$missing"
+              exit 1
+            fi
+          fi
+
+      - name: Azure login (OIDC)
+        if: steps.azure-auth.outputs.mode == 'oidc'
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID || secrets.AZUREAPPSERVICE_CLIENTID_A3FE6FA0EB3C4FB1A904A24E793784CC }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID || secrets.AZUREAPPSERVICE_TENANTID_002F50EAA7DA43F4BE1E622D56BA152E }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID || secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_06602A59FF87467483AB0531DCD5A3AD }}
+
+      - name: Deploy to Azure App Service (publish profile)
+        if: steps.azure-auth.outputs.mode == 'publish-profile'
         uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME || 'flowprogorb-api' }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE || secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
           package: backend
 
-      - name: Configure Azure App Service settings
+      - name: Deploy to Azure App Service (OIDC)
+        if: steps.azure-auth.outputs.mode == 'oidc'
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME || 'flowprogorb-api' }}
+          package: backend
+
+      - name: Configure Azure App Service settings (publish profile)
+        if: steps.azure-auth.outputs.mode == 'publish-profile'
         uses: azure/appservice-settings@v1
         with:
-          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME || 'flowprogorb-api' }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE || secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
+          app-settings-json: |
+            [
+              {
+                "name": "DATABASE_URL",
+                "value": "${{ secrets.DATABASE_URL }}",
+                "slotSetting": false
+              },
+              {
+                "name": "JWT_SECRET",
+                "value": "${{ secrets.JWT_SECRET }}",
+                "slotSetting": false
+              },
+              {
+                "name": "FRONTEND_URL",
+                "value": "${{ secrets.FRONTEND_URL }}",
+                "slotSetting": false
+              }
+            ]
+
+      - name: Configure Azure App Service settings (OIDC)
+        if: steps.azure-auth.outputs.mode == 'oidc'
+        uses: azure/appservice-settings@v1
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME || 'flowprogorb-api' }}
           app-settings-json: |
             [
               {
