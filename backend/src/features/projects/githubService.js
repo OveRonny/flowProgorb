@@ -232,6 +232,36 @@ export async function createFeatureGithubIssueService(projectId, featureId, data
   };
 }
 
+export async function syncGithubCollaboratorsService(projectId, userId) {
+  const project = await getProjectWithRepo(projectId, userId);
+  const octokit = await getInstallationClient(project.githubOwner, project.githubRepoName);
+
+  const { data: collaborators } = await octokit.repos.listCollaborators({
+    owner: project.githubOwner,
+    repo: project.githubRepoName,
+    per_page: 100,
+  });
+
+  const logins = collaborators.map((c) => c.login).filter(Boolean);
+
+  const users = await prisma.user.findMany({
+    where: { githubLogin: { in: logins } },
+    select: { id: true, githubLogin: true },
+  });
+
+  const added = [];
+  for (const user of users) {
+    await prisma.projectMember.upsert({
+      where: { userId_projectId: { userId: user.id, projectId } },
+      update: {},
+      create: { userId: user.id, projectId, role: 'MEMBER' },
+    });
+    added.push(user.githubLogin);
+  }
+
+  return { synced: added.length, logins: added };
+}
+
 export async function syncFeatureGithubIssueService(projectId, featureId, userId) {
   const project = await getProjectWithRepo(projectId, userId);
   const octokit = await getInstallationClient(project.githubOwner, project.githubRepoName);

@@ -318,6 +318,30 @@ router.post('/webhook', express.raw({ type: '*/*' }), async (req, res) => {
     }
   }
 
+  if (event === 'member') {
+    const { action, member, repository } = payload;
+    if (action === 'added' && member?.login) {
+      try {
+        const projectContext = await findProjectByRepository(repository);
+        if (projectContext) {
+          const user = await prisma.user.findUnique({ where: { githubLogin: member.login } });
+          if (user) {
+            await prisma.projectMember.upsert({
+              where: { userId_projectId: { userId: user.id, projectId: projectContext.projectId } },
+              update: {},
+              create: { userId: user.id, projectId: projectContext.projectId, role: 'MEMBER' },
+            });
+            console.log(`[Webhook] GitHub collaborator @${member.login} added to project ${projectContext.projectId}`);
+          } else {
+            console.log(`[Webhook] GitHub collaborator @${member.login} added but has no FlowProgorb account yet`);
+          }
+        }
+      } catch (err) {
+        console.error('[Webhook] member sync error:', err.message);
+      }
+    }
+  }
+
   res.status(200).json({ ok: true });
 });
 

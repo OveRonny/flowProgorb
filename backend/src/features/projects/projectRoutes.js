@@ -8,7 +8,8 @@ import {
     connectProjectGithubRepoController,
     getProjectGithubRepoController,
     createFeatureGithubIssueController,
-    syncFeatureGithubIssueController
+    syncFeatureGithubIssueController,
+    syncGithubCollaboratorsController
 } from './projectController.js'
 import {
     authMiddleware
@@ -26,6 +27,6 @@ router.post('/:id/github/connect', authMiddleware, connectProjectGithubRepoContr
 router.get('/:id/github/repo', authMiddleware, getProjectGithubRepoController);
 router.post('/:id/features/:featureId/github/issue', authMiddleware, createFeatureGithubIssueController);
 router.post('/:id/features/:featureId/github/issue/sync', authMiddleware, syncFeatureGithubIssueController);
-
+router.post('/:id/github/sync-collaborators', authMiddleware, syncGithubCollaboratorsController);
 
 export default router;

@@ -90,10 +90,14 @@ export async function githubOAuthLoginService(code) {
     throw err;
   }
 
+  const githubLogin = githubUser.login || null;
+
   let user = await prisma.user.findUnique({ where: { email: primaryEmail } });
   if (!user) {
     const randomPass = await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 10);
-    user = await prisma.user.create({ data: { email: primaryEmail, password: randomPass } });
+    user = await prisma.user.create({ data: { email: primaryEmail, password: randomPass, githubLogin } });
+  } else if (githubLogin && user.githubLogin !== githubLogin) {
+    user = await prisma.user.update({ where: { id: user.id }, data: { githubLogin } });
   }
 
   const token = signAuthToken(user);
