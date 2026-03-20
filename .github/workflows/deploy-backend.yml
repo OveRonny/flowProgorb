@@ -1,145 +1,58 @@
-name: Deploy Backend to Azure App Service
+name: Azure Static Web Apps CI/CD
 
 on:
   push:
-    branches: [main]
-    paths:
-      - 'backend/**'
-      - '.github/workflows/deploy-backend.yml'
-  workflow_dispatch:
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    branches:
+      - main
 
 jobs:
-  build-and-deploy:
+  build_and_deploy_job:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
+    name: Build and Deploy Job
     permissions:
-      id-token: write
-      contents: read
-
-    defaults:
-      run:
-        working-directory: backend
-
+       id-token: write
+       contents: read
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v3
         with:
-          node-version: '22.x'
-          cache: 'npm'
-          cache-dependency-path: backend/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Generate Prisma client
-        run: npx prisma generate
-
-      - name: Run tests
-        run: npm test
-        env:
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
-
-      - name: Check deployment secrets
-        id: check-secrets
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
-        run: |
-          if [ -z "$DATABASE_URL" ] || [ -z "$JWT_SECRET" ] || [ -z "$FRONTEND_URL" ]; then
-            echo "::warning::One or more secrets are missing. Azure App Settings update will be skipped to avoid overwriting existing values."
-            echo "should_configure=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "All required secrets are present."
-            echo "should_configure=true" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Select Azure auth mode
-        id: azure-auth
-        env:
-          AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE || secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
-        run: |
-          if [ -n "$AZURE_WEBAPP_PUBLISH_PROFILE" ]; then
-            echo "mode=publish-profile" >> "$GITHUB_OUTPUT"
-            echo "Using publish profile deployment mode."
-          else
-            echo "mode=oidc" >> "$GITHUB_OUTPUT"
-            echo "Using OIDC deployment mode."
-          fi
-
-      - name: Check Azure login secrets
-        if: steps.azure-auth.outputs.mode == 'oidc'
-        env:
-          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID || secrets.AZUREAPPSERVICE_CLIENTID_A3FE6FA0EB3C4FB1A904A24E793784CC }}
-          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID || secrets.AZUREAPPSERVICE_TENANTID_002F50EAA7DA43F4BE1E622D56BA152E }}
-          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID || secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_06602A59FF87467483AB0531DCD5A3AD }}
-        run: |
-          missing=""
-          if [ -z "$AZURE_CLIENT_ID" ]; then missing="$missing AZURE_CLIENT_ID"; fi
-          if [ -z "$AZURE_TENANT_ID" ]; then missing="$missing AZURE_TENANT_ID"; fi
-          if [ -z "$AZURE_SUBSCRIPTION_ID" ]; then missing="$missing AZURE_SUBSCRIPTION_ID"; fi
-
-          if [ -n "$missing" ]; then
-            echo "::error::Missing required Azure login secret(s):$missing"
-            echo "::error::Set these in GitHub repo Settings > Secrets and variables > Actions."
-            exit 1
-          fi
-
-      - name: Azure login (OIDC)
-        if: steps.azure-auth.outputs.mode == 'oidc'
-        uses: azure/login@v2
+          submodules: true
+          lfs: false
+      - name: Install OIDC Client from Core Package
+        run: npm install @actions/core@1.6.0 @actions/http-client
+      - name: Get Id Token
+        uses: actions/github-script@v6
+        id: idtoken
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID || secrets.AZUREAPPSERVICE_CLIENTID_A3FE6FA0EB3C4FB1A904A24E793784CC }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID || secrets.AZUREAPPSERVICE_TENANTID_002F50EAA7DA43F4BE1E622D56BA152E }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID || secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_06602A59FF87467483AB0531DCD5A3AD }}
-
-      - name: Deploy to Azure App Service (publish profile)
-        if: steps.azure-auth.outputs.mode == 'publish-profile'
-        uses: azure/webapps-deploy@v3
+           script: |
+               const coredemo = require('@actions/core')
+               return await coredemo.getIDToken()
+           result-encoding: string
+      - name: Build And Deploy
+        id: builddeploy
+        uses: Azure/static-web-apps-deploy@v1
         with:
-          app-name: flowprogorb-api
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE || secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
-          package: backend
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_JOLLY_DUNE_00225B21E }}
+          action: "upload"
+          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
+          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
+          app_location: "./frontend-vue" # App source code path
+          api_location: "" # Api source code path - optional
+          output_location: "dist" # Built app content directory - optional
+          github_id_token: ${{ steps.idtoken.outputs.result }}
+          ###### End of Repository/Build Configurations ######
 
-      - name: Deploy to Azure App Service (OIDC)
-        if: steps.azure-auth.outputs.mode == 'oidc'
-        uses: azure/webapps-deploy@v3
+  close_pull_request_job:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    name: Close Pull Request Job
+    steps:
+      - name: Close Pull Request
+        id: closepullrequest
+        uses: Azure/static-web-apps-deploy@v1
         with:
-          app-name: flowprogorb-api
-          package: backend
-
-      - name: Configure Azure App Service settings
-        uses: azure/appservice-settings@v1
-        if: steps.check-secrets.outputs.should_configure == 'true' && steps.azure-auth.outputs.mode == 'oidc'
-        with:
-          app-name: flowprogorb-api
-          app-settings-json: |
-            [
-              {
-                "name": "DATABASE_URL",
-                "value": "${{ secrets.DATABASE_URL }}",
-                "slotSetting": false
-              },
-              {
-                "name": "JWT_SECRET",
-                "value": "${{ secrets.JWT_SECRET }}",
-                "slotSetting": false
-              },
-              {
-                "name": "FRONTEND_URL",
-                "value": "${{ secrets.FRONTEND_URL }}",
-                "slotSetting": false
-              }
-            ]
-
-      - name: App settings note for publish profile mode
-        if: steps.check-secrets.outputs.should_configure == 'true' && steps.azure-auth.outputs.mode == 'publish-profile'
-        run: |
-          echo "::warning::Deployment succeeded with publish profile mode."
-          echo "::warning::App settings update step was skipped because it requires Azure login permissions."
+          action: "close"
