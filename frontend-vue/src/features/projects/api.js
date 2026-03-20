@@ -1,12 +1,12 @@
 import api from '../shared/axiosInstance'
 
 export const fetchProjects = async () => {
-    const response = await api.get('/projects');
+    const response = await api.get('/api/projects');
     return response.data;
 }
 
 export const fetchProjectById = async (projectId) => {
-    const response = await api.get(`/projects/${projectId}`);
+    const response = await api.get(`/api/projects/${projectId}`);
     return response.data;
 }
 
@@ -17,7 +17,7 @@ export const fetchProjectPlanning = async (projectId) => {
     } catch (firstError) {
         try {
             // Backward compatibility for environments exposing routes without /api prefix.
-            const response = await api.get(`/projects/${projectId}/planning`)
+            const response = await api.get(`/api/projects/${projectId}/planning`)
             return response.data
         } catch (secondError) {
             try {
@@ -32,7 +32,7 @@ export const fetchProjectPlanning = async (projectId) => {
                     members: response.data?.members || []
                 }
             } catch {
-                const response = await api.get(`/projects/${projectId}`)
+                const response = await api.get(`/api/projects/${projectId}`)
                 return {
                     ...response.data,
                     requirements: response.data?.requirements || [],
@@ -46,21 +46,21 @@ export const fetchProjectPlanning = async (projectId) => {
 }
 
 export const createProject = async (projectData) => {    
-    const response = await api.post('/projects', projectData);
+    const response = await api.post('/api/projects', projectData);
     return response.data;
 }
 
 export const updateProject = async (projectId, projectData) => {
-    const response = await api.put(`/projects/${projectId}`, projectData);
+    const response = await api.put(`/api/projects/${projectId}`, projectData);
     return response.data;
 }
 
 export const deleteProject = async (projectId) => {
-    await api.delete(`/projects/${projectId}`);
+    await api.delete(`/api/projects/${projectId}`);
 }
 
 export const createProjectFeature = async (projectId, featureData) => {
-    const response = await api.post(`/api/projects/${projectId}/features`, featureData);
+    const response = await api.post(`/api/api/projects/${projectId}/features`, featureData);
     return response.data;
 }
 

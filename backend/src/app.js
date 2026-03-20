@@ -56,7 +56,6 @@ export function createApp() {
   app.use('/api/auth', authRoutes);
   // Also mount at /auth so GitHub OAuth redirect URI (/auth/callback) resolves correctly
   app.use('/auth', authRoutes);
-  app.use('/projects', projectRoutes);
   app.use('/api/projects', projectRoutes);
   app.use('/api/features/:featureId/tasks', taskRoutes);
   app.use('/api/modules', moduleRoutes);
