@@ -60,7 +60,7 @@ jobs:
           else
             echo "should_configure=true" >> "$GITHUB_OUTPUT"
           fi
-      - name: Deploy to Azure App Service
+      - name: Log in to Azure
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_A3FE6FA0EB3C4FB1A904A24E793784CC }}
