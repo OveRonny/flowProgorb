@@ -60,6 +60,23 @@ jobs:
             echo "should_configure=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Check Azure login secrets
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZUREAPPSERVICE_CLIENTID_A3FE6FA0EB3C4FB1A904A24E793784CC }}
+          AZURE_TENANT_ID: ${{ secrets.AZUREAPPSERVICE_TENANTID_002F50EAA7DA43F4BE1E622D56BA152E }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_06602A59FF87467483AB0531DCD5A3AD }}
+        run: |
+          missing=""
+          if [ -z "$AZURE_CLIENT_ID" ]; then missing="$missing AZUREAPPSERVICE_CLIENTID_A3FE6FA0EB3C4FB1A904A24E793784CC"; fi
+          if [ -z "$AZURE_TENANT_ID" ]; then missing="$missing AZUREAPPSERVICE_TENANTID_002F50EAA7DA43F4BE1E622D56BA152E"; fi
+          if [ -z "$AZURE_SUBSCRIPTION_ID" ]; then missing="$missing AZUREAPPSERVICE_SUBSCRIPTIONID_06602A59FF87467483AB0531DCD5A3AD"; fi
+
+          if [ -n "$missing" ]; then
+            echo "::error::Missing required Azure login secret(s):$missing"
+            echo "::error::Set these in GitHub repo Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
       - name: Deploy to Azure App Service
         uses: azure/login@v2
         with:
