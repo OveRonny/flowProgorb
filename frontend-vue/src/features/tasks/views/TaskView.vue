@@ -63,16 +63,16 @@
 
             <!-- Add task -->
             <button class="bg-blue-500 text-white px-4 py-2 rounded" @click="showModal = true">
-                Ny Task
+                Ny oppgave
             </button>
 
             <!-- Kanban board -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-                <!-- Pending -->
+                <!-- To do -->
                 <div>
                     <h2 class="font-semibold mb-3 text-gray-700 dark:text-gray-300">
-                        Pending
+                        Å gjøre
                     </h2>
 
                     <TaskCard v-for="task in pendingTasks" :key="task.id" :task="task" @updateStatus="updateStatus"
@@ -82,7 +82,7 @@
                 <!-- In Progress -->
                 <div>
                     <h2 class="font-semibold mb-3 text-gray-700 dark:text-gray-300">
-                        In Progress
+                        Under arbeid
                     </h2>
 
                     <TaskCard v-for="task in inProgressTasks" :key="task.id" :task="task" @updateStatus="updateStatus"
@@ -92,7 +92,7 @@
                 <!-- Done -->
                 <div>
                     <h2 class="font-semibold mb-3 text-gray-700 dark:text-gray-300">
-                        Done
+                        Ferdig
                     </h2>
 
                     <TaskCard v-for="task in doneTasks" :key="task.id" :task="task" @updateStatus="updateStatus"
@@ -102,7 +102,7 @@
             </div>
 
             <!-- Modal -->
-            <Modal v-model="showModal" title="Ny Task">
+            <Modal v-model="showModal" title="Ny oppgave">
                 <TaskForm @submit="createTask" />
             </Modal>
 
@@ -253,7 +253,7 @@ const deleteTask = async (task) => {
         return
     }
 
-    const confirmed = window.confirm(`Delete task "${task.title}"?`)
+    const confirmed = window.confirm(`Slette oppgaven "${task.title}"?`)
     if (!confirmed) {
         return
     }

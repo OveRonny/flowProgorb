@@ -2,7 +2,7 @@
   <div class="flex items-center justify-center min-h-screen bg-gray-950">
     <div class="text-center">
       <p v-if="error" class="text-red-400 text-lg">{{ error }}</p>
-      <p v-else class="text-gray-400 text-lg">Signing you in with GitHub…</p>
+      <p v-else class="text-gray-400 text-lg">Logger deg inn med GitHub…</p>
     </div>
   </div>
 </template>
@@ -32,7 +32,7 @@ onMounted(() => {
     localStorage.setItem('token', token)
     router.push('/')
   } else {
-    error.value = 'No token received'
+    error.value = 'Mottok ikke token'
     setTimeout(() => router.push('/login'), 3000)
   }
 })

@@ -42,7 +42,15 @@ export async function getAllProjectsService(userId) {
       include: {
         features: {
           include: {
-              tasks: true
+              tasks: {
+                include: {
+                  timeLogs: {
+                    select: {
+                      minutes: true
+                    }
+                  }
+                }
+              }
           }
         }
       }

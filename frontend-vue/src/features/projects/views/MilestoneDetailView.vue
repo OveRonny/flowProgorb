@@ -4,21 +4,21 @@
       <div class="flex items-center justify-between gap-3">
         <div>
           <router-link :to="{ name: 'ProjectPlanning', params: { id: projectId } }" class="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400">
-            ← Back to Planning
+            ← Tilbake til planlegging
           </router-link>
           <h1 v-if="milestone" class="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">{{ milestone.title }}</h1>
         </div>
         <div v-if="milestone" class="flex gap-2">
           <button @click="startEdit" class="rounded bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600">
-            Edit
+            Rediger
           </button>
           <button @click="handleDelete" class="rounded bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600">
-            Delete
+            Slett
           </button>
         </div>
       </div>
 
-      <p v-if="loading" class="text-gray-600 dark:text-gray-400">Loading milestone...</p>
+      <p v-if="loading" class="text-gray-600 dark:text-gray-400">Laster milepæl...</p>
 
       <div v-if="milestone" class="space-y-6">
         <div class="rounded border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
@@ -31,27 +31,27 @@
                   ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
                   : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
               ]">
-                {{ milestone.completed ? 'Completed' : 'Open' }}
+                {{ milestone.completed ? 'Fullført' : 'Åpen' }}
               </span>
             </div>
             <div>
-              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400">Due Date</label>
+              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400">Frist</label>
               <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ formatDate(milestone.dueDate) }}</p>
             </div>
             <div>
-              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400">Created</label>
+              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400">Opprettet</label>
               <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ formatDate(milestone.createdAt) }}</p>
             </div>
           </div>
         </div>
 
         <div class="rounded border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-          <h3 class="font-semibold text-gray-900 dark:text-gray-100">Description</h3>
-          <p class="mt-2 text-gray-600 dark:text-gray-400">{{ milestone.description || 'No description provided' }}</p>
+          <h3 class="font-semibold text-gray-900 dark:text-gray-100">Beskrivelse</h3>
+          <p class="mt-2 text-gray-600 dark:text-gray-400">{{ milestone.description || 'Ingen beskrivelse oppgitt' }}</p>
         </div>
       </div>
 
-      <Modal v-model="showEditModal" title="Edit Milestone">
+      <Modal v-model="showEditModal" title="Rediger milepæl">
         <MilestoneForm v-if="milestone" :milestone="milestone" @submit="handleUpdate" />
       </Modal>
     </div>
@@ -106,7 +106,7 @@ async function handleUpdate(payload) {
 }
 
 async function handleDelete() {
-  if (!confirm('Delete this milestone?')) {
+  if (!confirm('Slette denne milepælen?')) {
     return
   }
   await projectStore.deleteMilestone(projectId.value, milestoneId.value)
@@ -114,7 +114,7 @@ async function handleDelete() {
 }
 
 function formatDate(date) {
-  if (!date) return 'Not set'
+  if (!date) return 'Ikke satt'
   return new Date(date).toLocaleDateString('no-NO')
 }
 </script>

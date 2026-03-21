@@ -1,12 +1,12 @@
 <template>
     <div class="min-h-screen bg-gray-100 dark:bg-gray-900 p-6">
         <div class="max-w-3xl mx-auto">
-            <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-6">Technologies</h1>
+            <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-6">Teknologier</h1>
 
             <TechnologyForm :types="technoStore.types" :typeLabels="technoStore.typeLabels"
                 :technology="editingTechnology" :onSubmit="handleSubmit" :onCancel="cancelEdit" />
 
-            <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Technology List</h2>
+            <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Teknologiliste</h2>
             <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
 
                 <table class="min-w-full text-sm text-left text-gray-700 dark:text-gray-300">
@@ -14,9 +14,9 @@
                  
                     <thead class="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-200 uppercase text-xs">
                         <tr>
-                            <th class="px-6 py-3">Name</th>
+                            <th class="px-6 py-3">Navn</th>
                             <th class="px-6 py-3">Type</th>
-                            <th class="px-6 py-3 text-center">Actions</th>
+                            <th class="px-6 py-3 text-center">Handlinger</th>
                         </tr>
                     </thead>
                   
@@ -40,14 +40,14 @@
                                    hover:bg-blue-600 dark:hover:bg-blue-700
                                    text-white text-sm font-semibold
                                    px-3 py-1 rounded transition">
-                                        Edit
+                                        Rediger
                                     </button>
 
                                     <button @click="deleteTechnology(tech.id)" class="bg-red-500 dark:bg-red-600
                                    hover:bg-red-600 dark:hover:bg-red-700
                                    text-white text-sm font-semibold
                                    px-3 py-1 rounded transition">
-                                        Delete
+                                        Slett
                                     </button>
 
                                 </div>
@@ -100,7 +100,7 @@ export default {
         };
 
         const deleteTechnology = async (id) => {
-            if (confirm("Are you sure you want to delete this technology?")) {
+            if (confirm("Er du sikker på at du vil slette denne teknologien?")) {
                 await technoStore.deleteTechnology(id);
             }
         };

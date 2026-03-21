@@ -6,7 +6,7 @@
                 <p class="mb-2 text-gray-600 dark:text-gray-400">{{ project.description || 'Ingen beskrivelse' }}</p>
                 <p class="text-gray-600 dark:text-gray-400">
                     Status: {{ project.status }} |
-                    Deadline: {{ project.deadline ? new Date(project.deadline).toLocaleDateString('no-NO') : 'Ikke satt' }}
+                    Frist: {{ project.deadline ? new Date(project.deadline).toLocaleDateString('no-NO') : 'Ikke satt' }}
                 </p>
                 <div class="mt-3 h-3 w-full rounded-full bg-gray-200 dark:bg-gray-700">
                     <div class="h-3 rounded-full bg-blue-500 transition-all" :style="{ width: projectProgressPercent + '%' }"></div>
@@ -23,8 +23,8 @@
                         placeholder="https://github.com/owner/repo"
                         class="min-w-65 flex-1 rounded border border-gray-300 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                     />
-                    <button @click="connectGithubRepo" class="rounded bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-black">Connect</button>
-                    <button @click="loadGithubRepo" class="rounded bg-gray-200 px-3 py-2 text-sm font-medium text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600">Refresh</button>
+                    <button @click="connectGithubRepo" class="rounded bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-black">Koble til</button>
+                    <button @click="loadGithubRepo" class="rounded bg-gray-200 px-3 py-2 text-sm font-medium text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600">Oppdater</button>
                 </div>
                 <p v-if="githubRepoInfo" class="mt-2 text-xs text-gray-500 dark:text-gray-400">{{ githubRepoInfo }}</p>
             </div>
@@ -34,13 +34,13 @@
             </p>
 
             <div class="flex items-center justify-between">
-                <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Features</h2>
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Funksjoner</h2>
                 <router-link :to="{ name: 'ProjectPlanning', params: { id: project?.id } }" class="rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-black">
-                    Open Planning
+                    Åpne planlegging
                 </router-link>
             </div>
 
-            <button class="mb-4 rounded bg-blue-500 px-4 py-2 text-white" @click="showFeatureModal = true">Legg til Feature</button>
+            <button class="mb-4 rounded bg-blue-500 px-4 py-2 text-white" @click="showFeatureModal = true">Legg til funksjon</button>
 
             <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
                 <FeatureCard
@@ -57,10 +57,10 @@
             </div>
 
             <p v-if="project && projectFeatures.length === 0 && !projectStore.loading" class="rounded border border-gray-200 bg-white px-4 py-6 text-center text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
-                Ingen features funnet for dette prosjektet.
+                Ingen funksjoner funnet for dette prosjektet.
             </p>
 
-            <Modal v-model="showFeatureModal" :title="editingFeature ? 'Rediger Feature' : 'Ny Feature'">
+            <Modal v-model="showFeatureModal" :title="editingFeature ? 'Rediger funksjon' : 'Ny funksjon'">
                 <FeatureForm
                     :key="editingFeature ? editingFeature.id : 'new'"
                     :feature="editingFeature"
@@ -102,7 +102,7 @@ const isGithubConnected = computed(() => Boolean(project.value?.githubOwner && p
 
 const githubRepoText = computed(() => {
     if (!project.value?.githubOwner || !project.value?.githubRepoName) {
-        return 'Not connected'
+        return 'Ikke tilkoblet'
     }
 
     return `${project.value.githubOwner}/${project.value.githubRepoName}`
@@ -114,7 +114,7 @@ const githubRepoInfo = computed(() => {
         return ''
     }
 
-    return `${repo.fullName} | default: ${repo.defaultBranch}`
+    return `${repo.fullName} | standardgren: ${repo.defaultBranch}`
 })
 
 const projectProgressPercent = computed(() => {

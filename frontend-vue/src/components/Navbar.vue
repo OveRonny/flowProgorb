@@ -9,7 +9,7 @@
         <button
           @click="$emit('toggle-theme')"
           class="rounded-lg border border-gray-200 p-2 transition hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-white/10 lg:hidden"
-          :title="isDark ? 'Light mode' : 'Dark mode'"
+          :title="isDark ? 'Lys modus' : 'Mørk modus'"
         >
           <component :is="isDark ? SunIcon : MoonIcon" class="h-5 w-5" />
         </button>
@@ -38,33 +38,33 @@
               ? 'bg-amber-600 text-white shadow-sm'
               : 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:hover:bg-amber-900/50'"
           >
-            Project Planning
+            Prosjektplanlegging
           </router-link>
         </div>
 
         <div class="flex flex-wrap items-center gap-2 lg:justify-end">
           <template v-if="!auth.token">
             <router-link to="/login" class="rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800">
-              Login
+              Logg inn
             </router-link>
             <router-link to="/register" class="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700">
-              Register
+              Registrer
             </router-link>
           </template>
 
           <template v-else>
             <span class="rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-700 dark:bg-gray-800 dark:text-gray-200">
-              Hi, {{ auth.user?.name || auth.email }}
+              Hei, {{ auth.user?.name || auth.email }}
             </span>
             <button @click="auth.logout" class="rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800">
-              Logout
+              Logg ut
             </button>
           </template>
 
           <button
             @click="$emit('toggle-theme')"
             class="hidden rounded-lg border border-gray-200 p-2 transition hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-white/10 lg:inline-flex"
-            :title="isDark ? 'Light mode' : 'Dark mode'"
+            :title="isDark ? 'Lys modus' : 'Mørk modus'"
           >
             <component :is="isDark ? SunIcon : MoonIcon" class="h-5 w-5" />
           </button>
@@ -91,16 +91,16 @@ defineEmits(['toggle-theme'])
 
 const visibleLinks = computed(() => {
   const baseLinks = [
-    { to: '/', label: 'Dashboard' }
+    { to: '/', label: 'Oversikt' }
   ]
 
   if (auth.token) {
     return [
       ...baseLinks,
-      { to: '/development', label: 'Development' },
-      { to: '/planning-overview', label: 'Planning' },
-      { to: '/module', label: 'Modules' },
-      { to: '/technology', label: 'Technologies' }
+      { to: '/development', label: 'Utvikling' },
+      { to: '/planning-overview', label: 'Planlegging' },
+      { to: '/module', label: 'Moduler' },
+      { to: '/technology', label: 'Teknologier' }
     ]
   }
 

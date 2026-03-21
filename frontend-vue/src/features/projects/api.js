@@ -12,35 +12,17 @@ export const fetchProjectById = async (projectId) => {
 
 export const fetchProjectPlanning = async (projectId) => {
     try {
-        const response = await api.get(`/api/projects/${projectId}/planning`)
-        return response.data
-    } catch (firstError) {
-        try {
-            // Backward compatibility for environments exposing routes without /api prefix.
-            const response = await api.get(`/api/projects/${projectId}/planning`)
-            return response.data
-        } catch (secondError) {
-            try {
-                // Temporary compatibility fallback for older backend deployments
-                // where planning data is still embedded in the project payload.
-                const response = await api.get(`/api/projects/${projectId}`)
-                return {
-                    ...response.data,
-                    requirements: response.data?.requirements || [],
-                    milestones: response.data?.milestones || [],
-                    customerMeetings: response.data?.customerMeetings || [],
-                    members: response.data?.members || []
-                }
-            } catch {
-                const response = await api.get(`/api/projects/${projectId}`)
-                return {
-                    ...response.data,
-                    requirements: response.data?.requirements || [],
-                    milestones: response.data?.milestones || [],
-                    customerMeetings: response.data?.customerMeetings || [],
-                    members: response.data?.members || []
-                }
-            }
+        return (await api.get(`/api/projects/${projectId}/planning`)).data
+    } catch (error) {
+        console.warn('Planning route missing, falling back')
+
+        const response = await api.get(`/api/projects/${projectId}`)
+        return {
+            ...response.data,
+            requirements: response.data?.requirements || [],
+            milestones: response.data?.milestones || [],
+            customerMeetings: response.data?.customerMeetings || [],
+            members: response.data?.members || []
         }
     }
 }

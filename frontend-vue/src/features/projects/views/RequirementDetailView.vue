@@ -4,21 +4,21 @@
       <div class="flex items-center justify-between gap-3">
         <div>
           <router-link :to="{ name: 'ProjectPlanning', params: { id: projectId } }" class="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400">
-            ← Back to Planning
+            ← Tilbake til planlegging
           </router-link>
           <h1 v-if="requirement" class="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">{{ requirement.title }}</h1>
         </div>
         <div v-if="requirement" class="flex gap-2">
           <button @click="startEdit" class="rounded bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600">
-            Edit
+            Rediger
           </button>
           <button @click="handleDelete" class="rounded bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600">
-            Delete
+            Slett
           </button>
         </div>
       </div>
 
-      <p v-if="loading" class="text-gray-600 dark:text-gray-400">Loading requirement...</p>
+      <p v-if="loading" class="text-gray-600 dark:text-gray-400">Laster krav...</p>
 
       <div v-if="requirement" class="space-y-6">
         <div class="rounded border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
@@ -26,46 +26,46 @@
             <div>
               <label class="block text-xs font-medium text-gray-500 dark:text-gray-400">Status</label>
               <span class="mt-1 inline-block rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
-                {{ requirement.status }}
+                {{ requirementStatusLabel(requirement.status) }}
               </span>
             </div>
             <div>
               <label class="block text-xs font-medium text-gray-500 dark:text-gray-400">Priority</label>
-              <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ requirement.priority ?? 'Not set' }}</p>
+              <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ requirement.priority ?? 'Ikke satt' }}</p>
             </div>
             <div>
-              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400">Created</label>
+              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400">Opprettet</label>
               <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ formatDate(requirement.createdAt) }}</p>
             </div>
           </div>
         </div>
 
         <div class="rounded border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-          <h3 class="font-semibold text-gray-900 dark:text-gray-100">Description</h3>
-          <p class="mt-2 text-gray-600 dark:text-gray-400">{{ requirement.description || 'No description provided' }}</p>
+          <h3 class="font-semibold text-gray-900 dark:text-gray-100">Beskrivelse</h3>
+          <p class="mt-2 text-gray-600 dark:text-gray-400">{{ requirement.description || 'Ingen beskrivelse oppgitt' }}</p>
         </div>
 
         <div v-if="requirement.meeting" class="rounded border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-          <h3 class="font-semibold text-gray-900 dark:text-gray-100">Related Meeting</h3>
+          <h3 class="font-semibold text-gray-900 dark:text-gray-100">Relatert møte</h3>
           <router-link :to="{ name: 'MeetingDetail', params: { projectId, id: requirement.meeting.id } }" class="mt-2 inline-block text-blue-600 hover:text-blue-700 dark:text-blue-400">
             {{ requirement.meeting.title }}
           </router-link>
         </div>
 
         <div v-if="requirement.features && requirement.features.length > 0" class="rounded border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-          <h3 class="font-semibold text-gray-900 dark:text-gray-100">Linked Features</h3>
+          <h3 class="font-semibold text-gray-900 dark:text-gray-100">Koblede funksjoner</h3>
           <ul class="mt-3 space-y-2">
             <li v-for="feature in requirement.features" :key="feature.id">
               <div class="flex items-center justify-between rounded bg-gray-50 p-2 dark:bg-gray-700">
                 <span class="text-sm text-gray-900 dark:text-gray-100">{{ feature.name }}</span>
-                <span class="rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-700 dark:bg-gray-600 dark:text-gray-300">{{ feature.status }}</span>
+                <span class="rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-700 dark:bg-gray-600 dark:text-gray-300">{{ featureStatusLabel(feature.status) }}</span>
               </div>
             </li>
           </ul>
         </div>
       </div>
 
-      <Modal v-model="showEditModal" title="Edit Requirement">
+      <Modal v-model="showEditModal" title="Rediger krav">
         <RequirementForm v-if="requirement" :requirement="requirement" :meetings="meetings" @submit="handleUpdate" />
       </Modal>
     </div>
@@ -122,7 +122,7 @@ async function handleUpdate(payload) {
 }
 
 async function handleDelete() {
-  if (!confirm('Delete this requirement?')) {
+  if (!confirm('Slette dette kravet?')) {
     return
   }
   await projectStore.deleteRequirement(projectId.value, requirementId.value)
@@ -130,7 +130,28 @@ async function handleDelete() {
 }
 
 function formatDate(date) {
-  if (!date) return 'N/A'
+  if (!date) return 'Ikke satt'
   return new Date(date).toLocaleDateString('no-NO')
+}
+
+function requirementStatusLabel(status) {
+  const labels = {
+    OPEN: 'Åpen',
+    APPROVED: 'Godkjent',
+    IMPLEMENTED: 'Implementert',
+    REJECTED: 'Avvist'
+  }
+
+  return labels[status] || status
+}
+
+function featureStatusLabel(status) {
+  const labels = {
+    PLANNED: 'Planlagt',
+    IN_PROGRESS: 'Under arbeid',
+    DONE: 'Ferdig'
+  }
+
+  return labels[status] || status
 }
 </script>

@@ -24,7 +24,7 @@ export const useAuthStore = defineStore('auth', {
                 localStorage.setItem('token', data.token)
                 return true
             } catch (err) {
-                this.error = err.response?.data?.message || err.response?.data?.error || 'Login failed'
+                this.error = err.response?.data?.message || err.response?.data?.error || 'Innlogging feilet'
             } finally {
                 this.loading = false
             }
@@ -40,7 +40,7 @@ export const useAuthStore = defineStore('auth', {
                 this.email = data.user.email
                 localStorage.setItem('token', data.token)
             } catch (err) {
-                this.error = err.response?.data?.message || err.response?.data?.error || 'Registration failed'
+                this.error = err.response?.data?.message || err.response?.data?.error || 'Registrering feilet'
                 return false
             } finally {
                 this.loading = false

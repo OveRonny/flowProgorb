@@ -5,18 +5,18 @@
 >
 
     <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
-        {{ isEditing ? "Edit Technology" : "Add Technology" }}
+        {{ isEditing ? "Rediger teknologi" : "Legg til teknologi" }}
     </h2>
 
     <!-- NAME -->
     <div class="mb-4">
         <label class="block text-gray-700 dark:text-gray-300 mb-1">
-            Name
+            Navn
         </label>
 
         <input
             v-model="form.name"
-            placeholder="Name"
+            placeholder="Navn"
             class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded
                    bg-gray-50 dark:bg-gray-700
                    text-gray-900 dark:text-gray-100
@@ -59,7 +59,7 @@
                    text-white font-semibold py-2 px-4 rounded
                    transition"
         >
-            {{ isEditing ? "Update" : "Save" }}
+            {{ isEditing ? "Oppdater" : "Lagre" }}
         </button>
 
         <button
@@ -72,7 +72,7 @@
                    font-semibold py-2 px-4 rounded
                    transition"
         >
-            Cancel
+            Avbryt
         </button>
 
     </div>

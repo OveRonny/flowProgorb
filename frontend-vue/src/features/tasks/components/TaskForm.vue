@@ -3,26 +3,26 @@
 
     <input
       v-model="task.title"
-      placeholder="Task title"
+      placeholder="Oppgavetittel"
       required
       class="w-full p-2 border rounded"
     />
 
     <textarea
       v-model="task.description"
-      placeholder="Description"
+      placeholder="Beskrivelse"
       class="w-full p-2 border rounded"
     />
 
     <input
       v-model.number="task.estimatedHours"
       type="number"
-      placeholder="Estimated hours"
+      placeholder="Estimerte timer"
       class="w-full p-2 border rounded"
     />
 
     <button class="bg-blue-500 text-white px-4 py-2 rounded">
-      Lag Task
+      Lag oppgave
     </button>
 
   </form>

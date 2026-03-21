@@ -32,10 +32,10 @@
           v-model="formData.status"
           class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
         >
-          <option value="OPEN">OPEN</option>
-          <option value="APPROVED">APPROVED</option>
-          <option value="IMPLEMENTED">IMPLEMENTED</option>
-          <option value="REJECTED">REJECTED</option>
+          <option value="OPEN">Åpen</option>
+          <option value="APPROVED">Godkjent</option>
+          <option value="IMPLEMENTED">Implementert</option>
+          <option value="REJECTED">Avvist</option>
         </select>
       </div>
       <div>
@@ -53,7 +53,7 @@
     </div>
     <div class="flex justify-end">
       <button type="submit" class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-        {{ requirement ? 'Oppdater requirement' : 'Legg til requirement' }}
+        {{ requirement ? 'Oppdater krav' : 'Legg til krav' }}
       </button>
     </div>
   </form>

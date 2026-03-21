@@ -53,7 +53,7 @@
 
         <div class="flex justify-end gap-3 border-t border-gray-200 pt-4 dark:border-gray-700">
             <button type="submit" class="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700">
-                {{ props.feature ? 'Oppdater feature' : 'Legg til feature' }}
+            {{ props.feature ? 'Oppdater funksjon' : 'Legg til funksjon' }}
             </button>
         </div>
     </form>

@@ -1,7 +1,7 @@
 <template>
     <form @submit.prevent="handleSubmit" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md mb-6">
         <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
-            {{ isEditing ? "Edit module" : "Add Module" }}
+            {{ isEditing ? "Rediger modul" : "Legg til modul" }}
         </h2>
 
         <div class="mb-4">
@@ -9,21 +9,21 @@
                 Navn
             </label>
 
-            <input v-model="form.name" placeholder="Name" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded
+            <input v-model="form.name" placeholder="Navn" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded
                    bg-gray-50 dark:bg-gray-700
                    text-gray-900 dark:text-gray-100
                    focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
         <div class="mb-4">
             <label class="block text-gray-700 dark:text-gray-300 mb-1">
-                Project
+                Prosjekt
             </label>
 
             <select v-model="form.projectId" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded
                    bg-gray-50 dark:bg-gray-700
                    text-gray-900 dark:text-gray-100
                    focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option disabled value="">Select project</option>
+                <option disabled value="">Velg prosjekt</option>
                 <option v-for="project in projects" :key="project.id" :value="project.id">
                     {{ project.name }}
                 </option>
@@ -48,7 +48,7 @@
                    text-white font-semibold py-2 px-4 rounded
                    transition"
         >
-            {{ isEditing ? "Update" : "Save" }}
+            {{ isEditing ? "Oppdater" : "Lagre" }}
         </button>
 
         <button
@@ -61,7 +61,7 @@
                    font-semibold py-2 px-4 rounded
                    transition"
         >
-            Cancel
+            Avbryt
         </button>
 
     </div>

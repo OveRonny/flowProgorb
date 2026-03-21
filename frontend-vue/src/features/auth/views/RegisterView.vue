@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-950 flex items-center justify-center px-4">
-    <h1>Register</h1>
+    <h1>Registrer</h1>
     <RegisterForm
       :loading="useStore.loading"
       :error="useStore.error"

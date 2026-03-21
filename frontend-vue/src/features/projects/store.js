@@ -68,6 +68,24 @@ export const useProjectsStore = defineStore('projects', {
             try {
                 const project = await fetchProjectPlanning(projectId)
                 this.planningProject = project
+                const projectIndex = this.projects.findIndex((p) => p.id === projectId)
+                if (projectIndex !== -1) {
+                    this.projects[projectIndex] = {
+                        ...this.projects[projectIndex],
+                        requirements: project.requirements || [],
+                        milestones: project.milestones || [],
+                        customerMeetings: project.customerMeetings || []
+                    }
+                }
+
+                if (this.project?.id === projectId) {
+                    this.project = {
+                        ...this.project,
+                        requirements: project.requirements || [],
+                        milestones: project.milestones || [],
+                        customerMeetings: project.customerMeetings || []
+                    }
+                }
                 return project
             } catch (err) {
                 this.error = err.response?.data?.message || err.response?.data?.error || 'Failed to load project planning'
@@ -131,7 +149,7 @@ export const useProjectsStore = defineStore('projects', {
             this.loading = true
             this.error = null
             try {     
-                await updateProjectFeature(projectId, featureId, featureData)
+                const result = await updateProjectFeature(projectId, featureId, featureData)
                 const index = this.project.features.findIndex(f => f.id === featureId)
                 if (index !== -1) {
                     this.project.features[index] = {
@@ -139,8 +157,10 @@ export const useProjectsStore = defineStore('projects', {
                         ...featureData
                     }
                 }
+                return result
             } catch (err) {
                 this.error = err.response?.data?.message || 'Failed to update feature'
+                return null
             }
                 finally {
                 this.loading = false

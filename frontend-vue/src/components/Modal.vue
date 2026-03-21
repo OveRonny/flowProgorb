@@ -10,7 +10,7 @@
         <button
           @click="$emit('update:modelValue', false)"
           class="rounded-md px-2 py-1 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200"
-          aria-label="Close modal"
+          aria-label="Lukk dialog"
         >
           ?
         </button>
@@ -26,7 +26,7 @@
 <script setup>
 defineProps({
   modelValue: Boolean,
-  title: { type: String, default: 'Modal' }
+  title: { type: String, default: 'Dialog' }
 })
 defineEmits(['update:modelValue'])
 </script>

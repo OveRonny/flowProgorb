@@ -49,9 +49,11 @@ export const useModulesStore = defineStore('modules', {
             try {
                 const newModule = await createModule(moduleData)
                 this.modules.push(newModule)
+                return newModule
             }
             catch (err) {
                 this.error = err.response?.data?.message || 'Failed to create module'
+                return null
             }
             finally {
                 this.loading = false
@@ -65,10 +67,14 @@ export const useModulesStore = defineStore('modules', {
                 const index = this.modules.findIndex(m => m.id === moduleId)
                 if (index !== -1) {
                     this.modules[index] = updatedModule
+                    // Ensure table re-renders even when internals keep same array reference.
+                    this.modules = [...this.modules]
                 }
+                return updatedModule
             }
             catch (err) {
                 this.error = err.response?.data?.message || 'Failed to update module'
+                return null
             }
             finally {
                 this.loading = false

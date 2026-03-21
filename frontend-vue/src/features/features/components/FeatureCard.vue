@@ -16,7 +16,7 @@
 
     <div class="mt-4 grid grid-cols-3 gap-2">
       <div class="rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-700/50">
-        <p class="text-xs text-gray-500 dark:text-gray-400">Tasks</p>
+        <p class="text-xs text-gray-500 dark:text-gray-400">Oppgaver</p>
         <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{{ taskCount }}</p>
       </div>
       <div class="rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-700/50">
@@ -62,7 +62,7 @@
     <div class="mt-4 rounded-lg border border-gray-200 px-3 py-3 text-sm dark:border-gray-700">
       <div class="flex items-center justify-between">
         <span class="font-medium text-gray-700 dark:text-gray-300">GitHub Issue</span>
-        <span class="text-xs text-gray-500 dark:text-gray-400">{{ feature.githubIssueState || 'not-linked' }}</span>
+        <span class="text-xs text-gray-500 dark:text-gray-400">{{ feature.githubIssueState || 'ikke-koblet' }}</span>
       </div>
       <a
         v-if="feature.githubIssueUrl"
@@ -71,9 +71,9 @@
         rel="noreferrer"
         class="mt-2 inline-block text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
       >
-        Open linked issue
+        Åpne koblet issue
       </a>
-      <p v-else class="mt-2 text-xs text-gray-500 dark:text-gray-400">No issue linked yet.</p>
+      <p v-else class="mt-2 text-xs text-gray-500 dark:text-gray-400">Ingen issue er koblet ennå.</p>
     </div>
 
     <div class="mt-5 flex flex-wrap gap-2">
@@ -81,7 +81,7 @@
         @click="$emit('viewTasks')"
         class="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
       >
-        View Tasks
+        Vis oppgaver
       </button>
       <button
         @click="$emit('edit', feature)"
@@ -102,9 +102,9 @@
         :class="githubConnected
           ? 'bg-gray-900 text-white hover:bg-black'
           : 'cursor-not-allowed bg-gray-300 text-gray-500 dark:bg-gray-700 dark:text-gray-400'"
-        :title="githubConnected ? 'Create GitHub issue' : 'Connect a GitHub repo first'"
+        :title="githubConnected ? 'Opprett GitHub-issue' : 'Koble til et GitHub-repo først'"
       >
-        Create Issue
+        Opprett issue
       </button>
       <button
         @click="$emit('syncIssue', feature)"
@@ -113,9 +113,9 @@
         :class="githubConnected
           ? 'bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600'
           : 'cursor-not-allowed bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400'"
-        :title="githubConnected ? 'Sync linked GitHub issue' : 'Connect a GitHub repo first'"
+        :title="githubConnected ? 'Synkroniser koblet GitHub-issue' : 'Koble til et GitHub-repo først'"
       >
-        Sync Issue
+        Synkroniser issue
       </button>
     </div>
   </div>
@@ -155,11 +155,11 @@ const totalTaskHours = computed(() => {
 const statusLabel = computed(() => {
   switch (props.feature?.status) {
     case 'IN_PROGRESS':
-      return 'In Progress'
+      return 'Under arbeid'
     case 'DONE':
-      return 'Done'
+      return 'Ferdig'
     default:
-      return 'Planned'
+      return 'Planlagt'
   }
 })
 

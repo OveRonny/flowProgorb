@@ -3,11 +3,11 @@
     <div class="mx-auto max-w-7xl space-y-6">
       <div v-if="project" class="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ project.name }} Planning</h1>
-          <p class="text-sm text-gray-500 dark:text-gray-400">Customer meetings, milestones, and requirements</p>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ project.name }} planlegging</h1>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Kundemøter, milepæler og krav</p>
         </div>
         <router-link :to="{ name: 'Features', params: { id: project.id } }" class="rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-black">
-          Back to Features
+          Tilbake til funksjoner
         </router-link>
       </div>
 
@@ -19,7 +19,7 @@
         <section class="rounded border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
           <div class="mb-4 flex items-center justify-between gap-2">
             <div>
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Requirements</h3>
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Krav</h3>
               <p class="text-sm text-gray-500 dark:text-gray-400">Krav og avklaringer</p>
             </div>
             <button class="rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700" @click="openRequirementModal()">Ny</button>
@@ -31,28 +31,28 @@
                   <h4 class="font-semibold text-gray-900 dark:text-gray-100">{{ requirement.title }}</h4>
                   <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ requirement.description || 'Ingen beskrivelse' }}</p>
                 </div>
-                <span class="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-200">{{ requirement.status }}</span>
+                <span class="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-200">{{ requirementStatusLabel(requirement.status) }}</span>
               </router-link>
               <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
                 Prioritet: {{ requirement.priority ?? 'Ikke satt' }}
                 <span v-if="requirement.meeting"> | Møte: {{ requirement.meeting.title }}</span>
               </p>
               <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Features: {{ (requirement.features || []).map((feature) => feature.name).join(', ') || 'Ingen' }}
+                Funksjoner: {{ (requirement.features || []).map((feature) => feature.name).join(', ') || 'Ingen' }}
               </p>
               <div class="mt-3 flex gap-2">
                 <button class="rounded bg-amber-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-600" @click="openRequirementModal(requirement)">Rediger</button>
                 <button class="rounded bg-red-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-600" @click="handleDeleteRequirement(requirement)">Slett</button>
               </div>
             </article>
-            <p v-if="!requirements.length" class="text-sm text-gray-500 dark:text-gray-400">Ingen requirements enda.</p>
+            <p v-if="!requirements.length" class="text-sm text-gray-500 dark:text-gray-400">Ingen krav enda.</p>
           </div>
         </section>
 
         <section class="rounded border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
           <div class="mb-4 flex items-center justify-between gap-2">
             <div>
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Milestones</h3>
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Milepæler</h3>
               <p class="text-sm text-gray-500 dark:text-gray-400">Mål og leveransepunkter</p>
             </div>
             <button class="rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700" @click="openMilestoneModal()">Ny</button>
@@ -65,7 +65,7 @@
                   <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ milestone.description || 'Ingen beskrivelse' }}</p>
                 </div>
                 <span class="rounded-full px-2 py-1 text-xs font-medium" :class="milestone.completed ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'">
-                  {{ milestone.completed ? 'Done' : 'Open' }}
+                  {{ milestone.completed ? 'Ferdig' : 'Åpen' }}
                 </span>
               </router-link>
               <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Forfall: {{ formatDate(milestone.dueDate) }}</p>
@@ -81,7 +81,7 @@
         <section class="rounded border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
           <div class="mb-4 flex items-center justify-between gap-2">
             <div>
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Customer Meetings</h3>
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Kundemøter</h3>
               <p class="text-sm text-gray-500 dark:text-gray-400">Møter, deltakere og oppfølging</p>
             </div>
             <button class="rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700" @click="openMeetingModal()">Nytt</button>
@@ -96,7 +96,7 @@
                 <span class="text-xs text-gray-500 dark:text-gray-400">{{ formatDateTime(meeting.date) }}</span>
               </router-link>
               <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Deltakere: {{ formatAttendees(meeting.attendees) }}</p>
-              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Requirements: {{ (meeting.requirements || []).map((requirement) => requirement.title).join(', ') || 'Ingen' }}</p>
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Krav: {{ (meeting.requirements || []).map((requirement) => requirement.title).join(', ') || 'Ingen' }}</p>
               <div class="mt-3 flex gap-2">
                 <button class="rounded bg-amber-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-600" @click="openMeetingModal(meeting)">Rediger</button>
                 <button class="rounded bg-red-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-600" @click="handleDeleteMeeting(meeting)">Slett</button>
@@ -107,7 +107,7 @@
         </section>
       </div>
 
-      <Modal v-model="showRequirementModal" :title="editingRequirement ? 'Rediger requirement' : 'Ny requirement'">
+      <Modal v-model="showRequirementModal" :title="editingRequirement ? 'Rediger krav' : 'Nytt krav'">
         <RequirementForm :requirement="editingRequirement" :meetings="customerMeetings" @submit="editingRequirement ? handleUpdateRequirement($event) : handleCreateRequirement($event)" />
       </Modal>
 
@@ -221,7 +221,7 @@ const handleUpdateRequirement = async (payload) => {
 }
 
 const handleDeleteRequirement = async (requirement) => {
-  if (!confirm('Slette dette requirementet?')) {
+  if (!confirm('Slette dette kravet?')) {
     return
   }
 
@@ -311,5 +311,16 @@ const formatAttendees = (attendees = []) => {
   }
 
   return attendees.map((attendee) => attendee.githubLogin || attendee.email).join(', ')
+}
+
+const requirementStatusLabel = (status) => {
+  const labels = {
+    OPEN: 'Åpen',
+    APPROVED: 'Godkjent',
+    IMPLEMENTED: 'Implementert',
+    REJECTED: 'Avvist'
+  }
+
+  return labels[status] || status
 }
 </script>

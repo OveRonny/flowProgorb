@@ -17,7 +17,7 @@
                         ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300'
                         : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'"
                 >
-                    {{ isGithubConnected ? 'GitHub connected' : 'GitHub not connected' }}
+                    {{ isGithubConnected ? 'GitHub tilkoblet' : 'GitHub ikke tilkoblet' }}
                 </span>
             </div>
 
@@ -29,7 +29,7 @@
 
 
         <p class="text-gray-600 dark:text-gray-400 mb-4">
-            Deadline: {{ project.deadline ? new Date(project.deadline).toLocaleDateString('no-NO') : 'Ikke satt' }}
+            Frist: {{ project.deadline ? new Date(project.deadline).toLocaleDateString('no-NO') : 'Ikke satt' }}
         </p>
         <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fremdrift</h4>
         <div class="w-full bg-gray-200 dark:bg-gray-700 h-3 rounded-full">

@@ -187,7 +187,7 @@ export async function updateRequirementService(projectId, requirementId, data, u
       id: requirementId,
       projectId
     },
-    select: { id: true }
+    select: { id: true, status: true, features: { select: { id: true } } }
   });
 
   if (!existingRequirement) {
@@ -202,7 +202,7 @@ export async function updateRequirementService(projectId, requirementId, data, u
     ? undefined
     : await ensureMeetingBelongsToProject(projectId, data.meetingId);
 
-  return prisma.requirement.update({
+  const updatedRequirement = await prisma.requirement.update({
     where: { id: requirementId },
     data: {
       title: data.title,
@@ -217,6 +217,52 @@ export async function updateRequirementService(projectId, requirementId, data, u
     },
     include: requirementInclude()
   });
+
+  // Automatically create a feature when requirement is approved
+  if (data.status === 'APPROVED' && existingRequirement.features.length === 0) {
+    try {
+      // Find or create a "General" module for this project
+      let module = await prisma.module.findFirst({
+        where: {
+          projectId,
+          name: 'General'
+        }
+      });
+
+      if (!module) {
+        module = await prisma.module.create({
+          data: {
+            projectId,
+            name: 'General',
+            description: 'Default module for approved requirements'
+          }
+        });
+      }
+
+      // Create a feature from the approved requirement
+      const requirementData = await prisma.requirement.findUnique({
+        where: { id: requirementId }
+      });
+
+      if (requirementData) {
+        await prisma.feature.create({
+          data: {
+            projectId,
+            moduleId: module.id,
+            name: requirementData.title,
+            description: requirementData.description,
+            requirementId,
+            status: 'PLANNED'
+          }
+        });
+      }
+    } catch (error) {
+      // Log error but don't fail the requirement update
+      console.error('Error creating feature from approved requirement:', error);
+    }
+  }
+
+  return updatedRequirement;
 }
 
 export async function deleteRequirementService(projectId, requirementId, userId) {

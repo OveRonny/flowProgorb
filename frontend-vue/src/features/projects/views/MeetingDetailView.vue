@@ -4,39 +4,39 @@
       <div class="flex items-center justify-between gap-3">
         <div>
           <router-link :to="{ name: 'ProjectPlanning', params: { id: projectId } }" class="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400">
-            ← Back to Planning
+            ← Tilbake til planlegging
           </router-link>
           <h1 v-if="meeting" class="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">{{ meeting.title }}</h1>
         </div>
         <div v-if="meeting" class="flex gap-2">
           <button @click="startEdit" class="rounded bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600">
-            Edit
+            Rediger
           </button>
           <button @click="handleDelete" class="rounded bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600">
-            Delete
+            Slett
           </button>
         </div>
       </div>
 
-      <p v-if="loading" class="text-gray-600 dark:text-gray-400">Loading meeting...</p>
+      <p v-if="loading" class="text-gray-600 dark:text-gray-400">Laster møte...</p>
 
       <div v-if="meeting" class="space-y-6">
         <div class="rounded border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
           <div class="grid gap-4">
             <div>
-              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400">Date</label>
+              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400">Dato</label>
               <p class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ formatDateTime(meeting.date) }}</p>
             </div>
           </div>
         </div>
 
         <div class="rounded border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-          <h3 class="font-semibold text-gray-900 dark:text-gray-100">Notes</h3>
-          <p class="mt-2 text-gray-600 dark:text-gray-400">{{ meeting.notes || 'No notes provided' }}</p>
+          <h3 class="font-semibold text-gray-900 dark:text-gray-100">Notater</h3>
+          <p class="mt-2 text-gray-600 dark:text-gray-400">{{ meeting.notes || 'Ingen notater oppgitt' }}</p>
         </div>
 
         <div v-if="meeting.attendees && meeting.attendees.length > 0" class="rounded border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-          <h3 class="font-semibold text-gray-900 dark:text-gray-100">Attendees</h3>
+          <h3 class="font-semibold text-gray-900 dark:text-gray-100">Deltakere</h3>
           <ul class="mt-3 space-y-2">
             <li v-for="attendee in meeting.attendees" :key="attendee.id" class="rounded bg-gray-50 p-2 dark:bg-gray-700">
               <p class="text-sm text-gray-900 dark:text-gray-100">{{ attendee.githubLogin || attendee.email }}</p>
@@ -45,7 +45,7 @@
         </div>
 
         <div v-if="meeting.requirements && meeting.requirements.length > 0" class="rounded border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-          <h3 class="font-semibold text-gray-900 dark:text-gray-100">Related Requirements</h3>
+          <h3 class="font-semibold text-gray-900 dark:text-gray-100">Relaterte krav</h3>
           <ul class="mt-3 space-y-2">
             <li v-for="requirement in meeting.requirements" :key="requirement.id">
               <router-link
@@ -60,7 +60,7 @@
         </div>
       </div>
 
-      <Modal v-model="showEditModal" title="Edit Meeting">
+      <Modal v-model="showEditModal" title="Rediger møte">
         <CustomerMeetingForm v-if="meeting" :meeting="meeting" :members="members" @submit="handleUpdate" />
       </Modal>
     </div>
@@ -117,7 +117,7 @@ async function handleUpdate(payload) {
 }
 
 async function handleDelete() {
-  if (!confirm('Delete this meeting?')) {
+  if (!confirm('Slette dette møtet?')) {
     return
   }
   await projectStore.deleteCustomerMeeting(projectId.value, meetingId.value)
@@ -125,7 +125,7 @@ async function handleDelete() {
 }
 
 function formatDateTime(date) {
-  if (!date) return 'Not set'
+  if (!date) return 'Ikke satt'
   return new Date(date).toLocaleString('no-NO')
 }
 </script>

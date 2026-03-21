@@ -16,10 +16,10 @@ const props = defineProps({
 
 const label = computed(() => {
   switch (props.status) {
-    case 'ACTIVE': return 'In Progress'
-    case 'COMPLETED': return 'Completed'
-    case 'ON_HOLD': return 'On Hold'
-    default: return 'Planned'
+    case 'ACTIVE': return 'Aktiv'
+    case 'COMPLETED': return 'Fullført'
+    case 'ON_HOLD': return 'På vent'
+    default: return 'Planlagt'
   }
 })
 

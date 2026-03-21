@@ -71,7 +71,7 @@
         Tilsvarer {{ newHoursLabel }} timer
       </p>
       <p v-else-if="!canEditTimeLogs" class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-        Tidslogging er kun aktiv for tasks med status In Progress.
+        Tidslogging er kun aktiv for oppgaver med status Under arbeid.
       </p>
     </div>
 
@@ -83,7 +83,7 @@
         @click="$emit('updateStatus', task, 'PENDING')"
         class="text-xs bg-gray-300 px-2 py-1 rounded"
       >
-        Pending
+        Å gjøre
       </button>
 
       <button
@@ -99,14 +99,14 @@
         @click="$emit('updateStatus', task, 'DONE')"
         class="text-xs bg-green-500 text-white px-2 py-1 rounded"
       >
-        Done
+        Ferdig
       </button>
 
       <button
         @click="$emit('deleteTask', task)"
         class="text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700"
       >
-        Delete
+        Slett
       </button>
 
     </div>
