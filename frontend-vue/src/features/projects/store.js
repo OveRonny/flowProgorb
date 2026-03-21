@@ -13,8 +13,6 @@ import {
     deleteProjectFeature,
     connectProjectGithubRepo,
     fetchProjectGithubRepo,
-    createFeatureGithubIssue,
-    syncFeatureGithubIssue,
     createRequirement,
     updateRequirement,
     deleteRequirement,
@@ -215,30 +213,6 @@ export const useProjectsStore = defineStore('projects', {
                 return result
             } catch (err) {
                 this.error = err.response?.data?.message || 'Failed to load GitHub repo details'
-                return null
-            } finally {
-                this.loading = false
-            }
-        },
-        async createGithubIssueForFeature(projectId, featureId, payload = {}) {
-            this.loading = true
-            this.error = null
-            try {
-                return await createFeatureGithubIssue(projectId, featureId, payload)
-            } catch (err) {
-                this.error = err.response?.data?.message || 'Failed to create GitHub issue'
-                return null
-            } finally {
-                this.loading = false
-            }
-        },
-        async syncGithubIssueForFeature(projectId, featureId) {
-            this.loading = true
-            this.error = null
-            try {
-                return await syncFeatureGithubIssue(projectId, featureId)
-            } catch (err) {
-                this.error = err.response?.data?.message || 'Failed to sync GitHub issue'
                 return null
             } finally {
                 this.loading = false

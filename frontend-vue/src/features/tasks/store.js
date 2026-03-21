@@ -7,6 +7,8 @@ import {
     createTask as createTaskApi,
     updateTask as updateTaskApi,
     deleteTask as deleteTaskApi,
+    createTaskGithubIssue as createTaskGithubIssueApi,
+    syncTaskGithubIssue as syncTaskGithubIssueApi,
     fetchTaskTimeLogs as fetchTaskTimeLogsApi,
     createTaskTimeLog as createTaskTimeLogApi,
     updateTaskTimeLog as updateTaskTimeLogApi,
@@ -22,6 +24,20 @@ export const useTasksStore = defineStore('tasks', {
         error: null
     }),
     actions: {
+        syncTask(task) {
+            if (!task?.id) {
+                return
+            }
+
+            const index = this.tasks.findIndex(t => t.id === task.id)
+            if (index !== -1) {
+                this.tasks[index] = task
+            }
+
+            if (this.task?.id === task.id) {
+                this.task = task
+            }
+        },
         syncTaskTimeLogs(taskId, logs) {
             this.timeLogsByTask[taskId] = logs
             const index = this.tasks.findIndex(t => t.id === taskId)
@@ -71,6 +87,7 @@ export const useTasksStore = defineStore('tasks', {
             try {
                 const newTask = await createTaskApi(featureId, taskData)
                 this.tasks.push(newTask)
+                this.syncTask(newTask)
                 this.syncTaskTimeLogs(newTask.id, newTask.timeLogs ?? [])
             }   
             catch (err) {
@@ -85,10 +102,7 @@ export const useTasksStore = defineStore('tasks', {
             this.error = null
             try {   
                 const updatedTask = await updateTaskApi(featureId, taskId, taskData)
-                const index = this.tasks.findIndex(t => t.id === taskId)
-                if (index !== -1) {
-                    this.tasks[index] = updatedTask
-                }
+                this.syncTask(updatedTask)
                 this.syncTaskTimeLogs(taskId, updatedTask.timeLogs ?? this.timeLogsByTask[taskId] ?? [])
             }
             catch (err) {
@@ -113,6 +127,36 @@ export const useTasksStore = defineStore('tasks', {
                 this.error = err.response?.data?.message || 'Failed to delete task'
             }
             finally {
+                this.loading = false
+            }
+        },
+        async createTaskGithubIssue(featureId, taskId, payload = {}) {
+            this.loading = true
+            this.error = null
+            try {
+                const updatedTask = await createTaskGithubIssueApi(featureId, taskId, payload)
+                this.syncTask(updatedTask)
+                this.syncTaskTimeLogs(taskId, updatedTask.timeLogs ?? this.timeLogsByTask[taskId] ?? [])
+                return updatedTask
+            } catch (err) {
+                this.error = err.response?.data?.message || 'Failed to create GitHub issue'
+                return null
+            } finally {
+                this.loading = false
+            }
+        },
+        async syncTaskGithubIssue(featureId, taskId) {
+            this.loading = true
+            this.error = null
+            try {
+                const updatedTask = await syncTaskGithubIssueApi(featureId, taskId)
+                this.syncTask(updatedTask)
+                this.syncTaskTimeLogs(taskId, updatedTask.timeLogs ?? this.timeLogsByTask[taskId] ?? [])
+                return updatedTask
+            } catch (err) {
+                this.error = err.response?.data?.message || 'Failed to sync GitHub issue'
+                return null
+            } finally {
                 this.loading = false
             }
         },

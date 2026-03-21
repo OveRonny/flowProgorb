@@ -8,6 +8,8 @@ import {
     createTaskController,
     updateTaskController,
     deleteTaskController,
+    createTaskGithubIssueController,
+    syncTaskGithubIssueController,
     getTaskTimeLogsController,
     createTaskTimeLogController,
     updateTaskTimeLogController,
@@ -22,6 +24,8 @@ router.get('/', authMiddleware, getAllTasksController);
 router.get('/:id', authMiddleware, getTaskByIdController);
 router.put('/:id', authMiddleware, updateTaskController);
 router.delete('/:id', authMiddleware, deleteTaskController);
+router.post('/:id/github/issue', authMiddleware, createTaskGithubIssueController);
+router.post('/:id/github/issue/sync', authMiddleware, syncTaskGithubIssueController);
 
 router.get('/:id/time-logs', authMiddleware, getTaskTimeLogsController);
 router.post('/:id/time-logs', authMiddleware, createTaskTimeLogController);

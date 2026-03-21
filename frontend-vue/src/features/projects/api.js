@@ -65,16 +65,6 @@ export const fetchProjectGithubRepo = async (projectId) => {
     return response.data;
 }
 
-export const createFeatureGithubIssue = async (projectId, featureId, payload = {}) => {
-    const response = await api.post(`/api/projects/${projectId}/features/${featureId}/github/issue`, payload);
-    return response.data;
-}
-
-export const syncFeatureGithubIssue = async (projectId, featureId) => {
-    const response = await api.post(`/api/projects/${projectId}/features/${featureId}/github/issue/sync`);
-    return response.data;
-}
-
 export const createRequirement = async (projectId, payload) => {
     const response = await api.post(`/api/projects/${projectId}/requirements`, payload)
     return response.data

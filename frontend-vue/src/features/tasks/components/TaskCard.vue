@@ -38,6 +38,23 @@
     </div>
 
     <div class="mt-4 border-t border-gray-200 dark:border-gray-700 pt-3">
+      <div class="mb-3 rounded-md border border-gray-200 bg-gray-50 p-2.5 text-xs dark:border-gray-700 dark:bg-gray-700/40">
+        <div class="flex items-center justify-between gap-2">
+          <span class="font-semibold tracking-wide text-gray-600 dark:text-gray-300">GitHub issue</span>
+          <span class="text-gray-500 dark:text-gray-400">{{ task.githubIssueState || 'ikke-koblet' }}</span>
+        </div>
+        <a
+          v-if="task.githubIssueUrl"
+          :href="task.githubIssueUrl"
+          target="_blank"
+          rel="noreferrer"
+          class="mt-2 inline-block text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
+        >
+          Åpne koblet issue
+        </a>
+        <p v-else class="mt-2 text-xs text-gray-500 dark:text-gray-400">Ingen issue er koblet til oppgaven ennå.</p>
+      </div>
+
       <p class="text-xs font-semibold tracking-wide text-gray-600 dark:text-gray-300 mb-2">Tidslogger</p>
 
       <div class="space-y-2 mb-3" v-if="(task.timeLogs ?? []).length">
@@ -77,6 +94,27 @@
 
     <!-- Status buttons -->
     <div class="flex gap-2 mt-3">
+      <button
+        @click="$emit('createIssue', task)"
+        :disabled="!githubConnected"
+        class="text-xs px-2 py-1 rounded transition"
+        :class="githubConnected
+          ? 'bg-gray-900 text-white hover:bg-black'
+          : 'cursor-not-allowed bg-gray-300 text-gray-500 dark:bg-gray-700 dark:text-gray-400'"
+      >
+        Opprett issue
+      </button>
+
+      <button
+        @click="$emit('syncIssue', task)"
+        :disabled="!githubConnected"
+        class="text-xs px-2 py-1 rounded transition"
+        :class="githubConnected
+          ? 'bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600'
+          : 'cursor-not-allowed bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400'"
+      >
+        Synkroniser issue
+      </button>
 
       <button
         v-if="task.status !== 'PENDING'"
@@ -118,7 +156,11 @@
 import { computed, ref } from 'vue'
 
 const props = defineProps({
-  task: Object
+  task: Object,
+  githubConnected: {
+    type: Boolean,
+    default: false
+  }
 })
 
 const totalLoggedMinutes = computed(() =>
@@ -148,7 +190,7 @@ const newHoursLabel = computed(() => {
 const newMinutes = ref('')
 const newNote = ref('')
 
-const emit = defineEmits(['updateStatus', 'addTimeLog', 'updateTimeLog', 'deleteTimeLog', 'deleteTask'])
+const emit = defineEmits(['updateStatus', 'addTimeLog', 'updateTimeLog', 'deleteTimeLog', 'deleteTask', 'createIssue', 'syncIssue'])
 
 const addTimeLog = () => {
   const minutes = Number(newMinutes.value)

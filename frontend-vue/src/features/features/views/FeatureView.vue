@@ -47,12 +47,9 @@
                     v-for="feature in projectFeatures"
                     :key="feature.id"
                     :feature="feature"
-                    :githubConnected="isGithubConnected"
                     @edit="handleEdit"
                     @delete="handleDelete"
                     @viewTasks="goToTasks(feature.id)"
-                    @createIssue="createIssue"
-                    @syncIssue="syncIssue"
                 />
             </div>
 
@@ -98,7 +95,6 @@ const project = computed(() => projectStore.project)
 const allTechnologies = computed(() => technoStore.technologies)
 const projectFeatures = computed(() => (project.value?.features || []).filter((feature) => feature && feature.id != null))
 const modules = computed(() => moduleStore.modules || [])
-const isGithubConnected = computed(() => Boolean(project.value?.githubOwner && project.value?.githubRepoName))
 
 const githubRepoText = computed(() => {
     if (!project.value?.githubOwner || !project.value?.githubRepoName) {
@@ -241,34 +237,4 @@ const loadGithubRepo = async () => {
     await projectStore.fetchGithubRepo(projectId)
 }
 
-const createIssue = async (feature) => {
-    const projectId = Number(project.value?.id)
-    if (!projectId || !feature?.id) {
-        return
-    }
-
-    const created = await projectStore.createGithubIssueForFeature(projectId, feature.id, {
-        title: feature.name,
-        body: feature.description || ''
-    })
-    if (!created) {
-        return
-    }
-
-    await projectStore.fetchProjectById(projectId)
-}
-
-const syncIssue = async (feature) => {
-    const projectId = Number(project.value?.id)
-    if (!projectId || !feature?.id) {
-        return
-    }
-
-    const synced = await projectStore.syncGithubIssueForFeature(projectId, feature.id)
-    if (!synced) {
-        return
-    }
-
-    await projectStore.fetchProjectById(projectId)
-}
 </script>

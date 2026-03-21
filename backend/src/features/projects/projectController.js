@@ -8,8 +8,6 @@ import { getAllProjectsService, getProjectByIdService, createProjectService, upd
 import {
     connectProjectGithubRepoService,
     getProjectGithubRepoService,
-    createFeatureGithubIssueService,
-    syncFeatureGithubIssueService,
     syncGithubCollaboratorsService
 } from './githubService.js';
 import {
@@ -79,20 +77,6 @@ export const connectProjectGithubRepoController = handleAsync(async (req, res) =
 export const getProjectGithubRepoController = handleAsync(async (req, res) => {
     const projectId = parseId(req.params.id);
     const result = await getProjectGithubRepoService(projectId, req.user?.userId);
-    res.json(result);
-});
-
-export const createFeatureGithubIssueController = handleAsync(async (req, res) => {
-    const projectId = parseId(req.params.id);
-    const featureId = parseId(req.params.featureId);
-    const result = await createFeatureGithubIssueService(projectId, featureId, req.body || {}, req.user?.userId);
-    res.status(201).json(result);
-});
-
-export const syncFeatureGithubIssueController = handleAsync(async (req, res) => {
-    const projectId = parseId(req.params.id);
-    const featureId = parseId(req.params.featureId);
-    const result = await syncFeatureGithubIssueService(projectId, featureId, req.user?.userId);
     res.json(result);
 });
 

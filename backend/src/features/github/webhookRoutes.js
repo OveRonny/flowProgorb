@@ -76,52 +76,26 @@ async function syncPullRequestEvent(payload) {
   const prText = [pullRequest.title, pullRequest.body].filter(Boolean).join('\n').trim();
   const closingIssueNumbers = extractClosingIssueNumbers(prText);
 
-  let feature = null;
+  let branchFeature = null;
 
   if (branchName) {
-    feature = await prisma.feature.findFirst({
+    branchFeature = await prisma.feature.findFirst({
       where: { projectId, githubBranchName: branchName },
-      include: { tasks: true },
+      select: { id: true, status: true },
     });
   }
 
-  if (!feature && closingIssueNumbers.length > 0) {
-    feature = await prisma.feature.findFirst({
-      where: {
-        projectId,
-        githubIssueId: { in: closingIssueNumbers },
-      },
-      include: { tasks: true },
-    });
-  }
-
-  if (feature) {
-    const featureStatus = pullRequest.merged
-      ? 'DONE'
-      : ['opened', 'reopened', 'ready_for_review', 'synchronize'].includes(action) && feature.status === 'PLANNED'
-        ? 'IN_PROGRESS'
-        : undefined;
-
-    await prisma.feature.update({
-      where: { id: feature.id },
-      data: {
-        status: featureStatus,
-        githubBranchName: branchName ?? undefined,
-        githubPRId: prNumber,
-        githubPRUrl: prUrl,
-        githubPRState: prState,
-        githubSyncedAt: new Date(),
-      },
-    });
-  }
-
-  const tasks = feature?.tasks ?? await prisma.task.findMany({
+  const tasks = await prisma.task.findMany({
     where: { feature: { projectId } },
-    select: { id: true, title: true, status: true, githubPRId: true },
+    select: { id: true, title: true, status: true, githubPRId: true, githubIssueId: true, featureId: true },
   });
 
   const matchedTasks = tasks.filter((task) => {
     if (task.githubPRId === prNumber) {
+      return true;
+    }
+
+    if (closingIssueNumbers.includes(task.githubIssueId)) {
       return true;
     }
 
@@ -131,6 +105,38 @@ async function syncPullRequestEvent(payload) {
 
     return taskMatchesText(task, prText);
   });
+
+  const affectedFeatureIds = new Set([
+    branchFeature?.id,
+    ...matchedTasks.map((task) => task.featureId)
+  ].filter(Boolean));
+
+  if (affectedFeatureIds.size > 0) {
+    const features = await prisma.feature.findMany({
+      where: { id: { in: [...affectedFeatureIds] } },
+      select: { id: true, status: true }
+    });
+
+    for (const feature of features) {
+      const featureStatus = pullRequest.merged
+        ? 'DONE'
+        : ['opened', 'reopened', 'ready_for_review', 'synchronize'].includes(action) && feature.status === 'PLANNED'
+          ? 'IN_PROGRESS'
+          : undefined;
+
+      await prisma.feature.update({
+        where: { id: feature.id },
+        data: {
+          status: featureStatus,
+          githubBranchName: branchName ?? undefined,
+          githubPRId: prNumber,
+          githubPRUrl: prUrl,
+          githubPRState: prState,
+          githubSyncedAt: new Date(),
+        },
+      });
+    }
+  }
 
   for (const task of matchedTasks) {
     const nextStatus = pullRequest.merged
@@ -192,23 +198,25 @@ router.post('/webhook', express.raw({ type: '*/*' }), async (req, res) => {
 
     if (['opened', 'edited', 'closed', 'reopened'].includes(action)) {
       try {
-        const feature = await prisma.feature.findFirst({
+        const task = await prisma.task.findFirst({
           where: {
             githubIssueId: issue.number,
-            project: {
-              githubOwner: repoOwner,
-              githubRepoName: repoName,
+            feature: {
+              project: {
+                githubOwner: repoOwner,
+                githubRepoName: repoName,
+              },
             },
           },
         });
 
-        if (feature) {
-          await prisma.feature.update({
-            where: { id: feature.id },
+        if (task) {
+          await prisma.task.update({
+            where: { id: task.id },
             data: {
               githubIssueState: issue.state,
               githubIssueUrl: issue.html_url,
-              githubSyncedAt: new Date(),
+              githubIssueSyncedAt: new Date(),
             },
           });
          

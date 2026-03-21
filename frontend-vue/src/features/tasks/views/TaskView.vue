@@ -59,6 +59,10 @@
                     </div>
                     <p v-else class="text-gray-500 dark:text-gray-400">Ingen tidslogger enda.</p>
                 </div>
+
+                <p v-if="tasksStore.error" class="mt-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
+                    {{ tasksStore.error }}
+                </p>
             </div>
 
             <!-- Add task -->
@@ -75,8 +79,8 @@
                         Å gjøre
                     </h2>
 
-                    <TaskCard v-for="task in pendingTasks" :key="task.id" :task="task" @updateStatus="updateStatus"
-                        @addTimeLog="addTimeLog" @updateTimeLog="updateTimeLog" @deleteTimeLog="deleteTimeLog" @deleteTask="deleteTask" />
+                    <TaskCard v-for="task in pendingTasks" :key="task.id" :task="task" :githubConnected="githubConnected" @updateStatus="updateStatus"
+                        @addTimeLog="addTimeLog" @updateTimeLog="updateTimeLog" @deleteTimeLog="deleteTimeLog" @deleteTask="deleteTask" @createIssue="createIssue" @syncIssue="syncIssue" />
                 </div>
 
                 <!-- In Progress -->
@@ -85,8 +89,8 @@
                         Under arbeid
                     </h2>
 
-                    <TaskCard v-for="task in inProgressTasks" :key="task.id" :task="task" @updateStatus="updateStatus"
-                        @addTimeLog="addTimeLog" @updateTimeLog="updateTimeLog" @deleteTimeLog="deleteTimeLog" @deleteTask="deleteTask" />
+                    <TaskCard v-for="task in inProgressTasks" :key="task.id" :task="task" :githubConnected="githubConnected" @updateStatus="updateStatus"
+                        @addTimeLog="addTimeLog" @updateTimeLog="updateTimeLog" @deleteTimeLog="deleteTimeLog" @deleteTask="deleteTask" @createIssue="createIssue" @syncIssue="syncIssue" />
                 </div>
 
                 <!-- Done -->
@@ -95,8 +99,8 @@
                         Ferdig
                     </h2>
 
-                    <TaskCard v-for="task in doneTasks" :key="task.id" :task="task" @updateStatus="updateStatus"
-                        @addTimeLog="addTimeLog" @updateTimeLog="updateTimeLog" @deleteTimeLog="deleteTimeLog" @deleteTask="deleteTask" />
+                    <TaskCard v-for="task in doneTasks" :key="task.id" :task="task" :githubConnected="githubConnected" @updateStatus="updateStatus"
+                        @addTimeLog="addTimeLog" @updateTimeLog="updateTimeLog" @deleteTimeLog="deleteTimeLog" @deleteTask="deleteTask" @createIssue="createIssue" @syncIssue="syncIssue" />
                 </div>
 
             </div>
@@ -132,6 +136,7 @@ let refreshIntervalId = null
 
 const tasks = computed(() => tasksStore.tasks)
 const feature = computed(() => tasks.value[0]?.feature ?? null)
+const githubConnected = computed(() => Boolean(projectStore.project?.githubOwner && projectStore.project?.githubRepoName))
 const featuresPath = computed(() => {
     const projectId = Number(route.query.projectId || feature.value?.projectId)
     return Number.isInteger(projectId) && projectId > 0 ? `/project/${projectId}` : ''
@@ -187,6 +192,11 @@ onMounted(async () => {
     if (!featureId) return
     await tasksStore.fetchTasks(featureId)
 
+    const projectId = Number(route.query.projectId || feature.value?.projectId)
+    if (projectId > 0) {
+        await projectStore.fetchProjectById(projectId)
+    }
+
     // Poll periodically so GitHub webhook updates are reflected without manual reload.
     refreshIntervalId = setInterval(async () => {
         try {
@@ -238,6 +248,20 @@ const updateStatus = async (task, status) => {
 
 const addTimeLog = async (task, payload) => {
     await tasksStore.createTaskTimeLog(featureId, task.id, payload)
+}
+
+const createIssue = async (task) => {
+    const created = await tasksStore.createTaskGithubIssue(featureId, task.id, {
+        title: task.title,
+        body: task.description || ''
+    })
+    if (!created) {
+        return
+    }
+}
+
+const syncIssue = async (task) => {
+    await tasksStore.syncTaskGithubIssue(featureId, task.id)
 }
 
 const updateTimeLog = async (task, timeLogId, payload) => {

@@ -16,6 +16,10 @@ import {
     updateTaskTimeLogService,
     deleteTaskTimeLogService
 } from './taskService.js';
+import {
+    createTaskGithubIssueService,
+    syncTaskGithubIssueService
+} from '../projects/githubService.js';
 
 export const getAllTasksController = handleAsync(async (req, res) => {
     const featureId = parseId(req.params.featureId);
@@ -68,6 +72,20 @@ export const deleteTaskController = handleAsync(async (req, res) => {
     }
 
     res.status(204).send();
+});
+
+export const createTaskGithubIssueController = handleAsync(async (req, res) => {
+    const featureId = parseId(req.params.featureId);
+    const taskId = parseId(req.params.id);
+    const task = await createTaskGithubIssueService(featureId, taskId, req.body || {}, req.user?.userId);
+    res.status(201).json(task);
+});
+
+export const syncTaskGithubIssueController = handleAsync(async (req, res) => {
+    const featureId = parseId(req.params.featureId);
+    const taskId = parseId(req.params.id);
+    const task = await syncTaskGithubIssueService(featureId, taskId, req.user?.userId);
+    res.json(task);
 });
 
 export const getTaskTimeLogsController = handleAsync(async (req, res) => {

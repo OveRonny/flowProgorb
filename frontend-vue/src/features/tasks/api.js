@@ -24,6 +24,16 @@ export const deleteTask = async (featureId, taskId) => {
   await api.delete(`/api/features/${featureId}/tasks/${taskId}`)
 }
 
+export const createTaskGithubIssue = async (featureId, taskId, payload) => {
+    const response = await api.post(`/api/features/${featureId}/tasks/${taskId}/github/issue`, payload)
+    return response.data
+}
+
+export const syncTaskGithubIssue = async (featureId, taskId) => {
+    const response = await api.post(`/api/features/${featureId}/tasks/${taskId}/github/issue/sync`)
+    return response.data
+}
+
 export const fetchTaskTimeLogs = async (featureId, taskId) => {
     const response = await api.get(`/api/features/${featureId}/tasks/${taskId}/time-logs`)
     return response.data

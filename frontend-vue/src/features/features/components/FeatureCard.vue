@@ -59,23 +59,6 @@
       </div>
     </div>
 
-    <div class="mt-4 rounded-lg border border-gray-200 px-3 py-3 text-sm dark:border-gray-700">
-      <div class="flex items-center justify-between">
-        <span class="font-medium text-gray-700 dark:text-gray-300">GitHub Issue</span>
-        <span class="text-xs text-gray-500 dark:text-gray-400">{{ feature.githubIssueState || 'ikke-koblet' }}</span>
-      </div>
-      <a
-        v-if="feature.githubIssueUrl"
-        :href="feature.githubIssueUrl"
-        target="_blank"
-        rel="noreferrer"
-        class="mt-2 inline-block text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
-      >
-        Åpne koblet issue
-      </a>
-      <p v-else class="mt-2 text-xs text-gray-500 dark:text-gray-400">Ingen issue er koblet ennå.</p>
-    </div>
-
     <div class="mt-5 flex flex-wrap gap-2">
       <button
         @click="$emit('viewTasks')"
@@ -95,28 +78,6 @@
       >
         Slett
       </button>
-      <button
-        @click="$emit('createIssue', feature)"
-        :disabled="!githubConnected"
-        class="rounded-md px-3 py-2 text-sm font-medium transition"
-        :class="githubConnected
-          ? 'bg-gray-900 text-white hover:bg-black'
-          : 'cursor-not-allowed bg-gray-300 text-gray-500 dark:bg-gray-700 dark:text-gray-400'"
-        :title="githubConnected ? 'Opprett GitHub-issue' : 'Koble til et GitHub-repo først'"
-      >
-        Opprett issue
-      </button>
-      <button
-        @click="$emit('syncIssue', feature)"
-        :disabled="!githubConnected"
-        class="rounded-md px-3 py-2 text-sm font-medium transition"
-        :class="githubConnected
-          ? 'bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600'
-          : 'cursor-not-allowed bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400'"
-        :title="githubConnected ? 'Synkroniser koblet GitHub-issue' : 'Koble til et GitHub-repo først'"
-      >
-        Synkroniser issue
-      </button>
     </div>
   </div>
 </template>
@@ -126,11 +87,7 @@ import { computed } from 'vue'
 import { calculateTaskCollectionProgress } from '../../shared/progress.js'
 
 const props = defineProps({
-  feature: Object,
-  githubConnected: {
-    type: Boolean,
-    default: false
-  }
+  feature: Object
 })
 
 const taskCount = computed(() => (props.feature?.tasks || []).length)
@@ -183,5 +140,5 @@ const techTypeClass = (type) => {
   }
 }
 
-defineEmits(['edit', 'delete', 'viewTasks', 'createIssue', 'syncIssue'])
+defineEmits(['edit', 'delete', 'viewTasks'])
 </script>

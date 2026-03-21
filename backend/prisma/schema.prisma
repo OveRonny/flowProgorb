@@ -107,9 +107,6 @@ model Feature {
   name             String
   description      String?
   status           FeatureStatus @default(PLANNED) 
-  githubIssueId    Int?
-  githubIssueUrl   String?
-  githubIssueState String?
   githubBranchName String?
   githubPRId       Int?
   githubPRUrl      String?
@@ -145,6 +142,10 @@ model Task {
   completedAt    DateTime?
   assignedTo     User? @relation(fields: [assignedToId], references: [id])
   assignedToId   Int?
+  githubIssueId        Int?
+  githubIssueUrl       String?
+  githubIssueState     String?
+  githubIssueSyncedAt  DateTime?
 
   githubCommentId Int?
   githubPRId      Int?

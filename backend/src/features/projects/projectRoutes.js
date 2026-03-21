@@ -8,8 +8,6 @@ import {
     getProjectPlanningController,
     connectProjectGithubRepoController,
     getProjectGithubRepoController,
-    createFeatureGithubIssueController,
-    syncFeatureGithubIssueController,
     syncGithubCollaboratorsController,
     createRequirementController,
     updateRequirementController,
@@ -36,8 +34,6 @@ router.delete('/:id', authMiddleware, deleteProjectController);
 
 router.post('/:id/github/connect', authMiddleware, connectProjectGithubRepoController);
 router.get('/:id/github/repo', authMiddleware, getProjectGithubRepoController);
-router.post('/:id/features/:featureId/github/issue', authMiddleware, createFeatureGithubIssueController);
-router.post('/:id/features/:featureId/github/issue/sync', authMiddleware, syncFeatureGithubIssueController);
 router.post('/:id/github/sync-collaborators', authMiddleware, syncGithubCollaboratorsController);
 router.post('/:id/requirements', authMiddleware, createRequirementController);
 router.put('/:id/requirements/:requirementId', authMiddleware, updateRequirementController);

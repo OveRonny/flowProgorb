@@ -184,52 +184,77 @@ export async function getProjectGithubRepoService(projectId, userId) {
   };
 }
 
-export async function createFeatureGithubIssueService(projectId, featureId, data, userId) {
-  const project = await getProjectWithRepo(projectId, userId);
-  const octokit = await getInstallationClient(project.githubOwner, project.githubRepoName);
-
-  const feature = await prisma.feature.findFirst({
-    where: { id: featureId, projectId },
-    select: { id: true, name: true, description: true }
-  });
-
-  if (!feature) {
-    throw createHttpError('Feature not found for this project', 404);
+async function getTaskWithRepo(featureId, taskId, userId) {
+  if (!userId) {
+    throw createHttpError('Task not found', 404);
   }
 
-  const issueTitle = data.title || feature.name;
-  const issueBody = data.body || feature.description || '';
+  const task = await prisma.task.findFirst({
+    where: {
+      id: taskId,
+      featureId,
+      feature: {
+        project: {
+          members: {
+            some: {
+              userId
+            }
+          }
+        }
+      }
+    },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      githubIssueId: true,
+      feature: {
+        select: {
+          projectId: true
+        }
+      }
+    }
+  });
+
+  if (!task) {
+    throw createHttpError('Task not found', 404);
+  }
+
+  const project = await getProjectWithRepo(task.feature.projectId, userId);
+  return { task, project };
+}
+
+export async function createTaskGithubIssueService(featureId, taskId, data, userId) {
+  const { task, project } = await getTaskWithRepo(featureId, taskId, userId);
+  const octokit = await getInstallationClient(project.githubOwner, project.githubRepoName);
 
   const issueResponse = await octokit.issues.create({
     owner: project.githubOwner,
     repo: project.githubRepoName,
-    title: issueTitle,
-    body: issueBody,
+    title: data.title || task.title,
+    body: data.body || task.description || '',
     labels: Array.isArray(data.labels) ? data.labels : undefined
   });
 
   const issue = issueResponse.data;
 
-  await prisma.feature.update({
-    where: { id: featureId },
+  const updatedTask = await prisma.task.update({
+    where: { id: taskId },
     data: {
       githubIssueId: issue.number,
       githubIssueUrl: issue.html_url,
       githubIssueState: issue.state,
-      githubSyncedAt: new Date()
+      githubIssueSyncedAt: new Date()
+    },
+    include: {
+      feature: true,
+      timeLogs: {
+        orderBy: { createdAt: 'desc' }
+      }
     }
   });
 
-  return {
-    featureId,
-    issue: {
-      id: issue.id,
-      number: issue.number,
-      title: issue.title,
-      state: issue.state,
-      htmlUrl: issue.html_url
-    }
-  };
+  return updatedTask;
 }
 
 export async function syncGithubCollaboratorsService(projectId, userId) {
@@ -262,50 +287,36 @@ export async function syncGithubCollaboratorsService(projectId, userId) {
   return { synced: added.length, logins: added };
 }
 
-export async function syncFeatureGithubIssueService(projectId, featureId, userId) {
-  const project = await getProjectWithRepo(projectId, userId);
+export async function syncTaskGithubIssueService(featureId, taskId, userId) {
+  const { task, project } = await getTaskWithRepo(featureId, taskId, userId);
   const octokit = await getInstallationClient(project.githubOwner, project.githubRepoName);
 
-  const feature = await prisma.feature.findFirst({
-    where: { id: featureId, projectId },
-    select: {
-      id: true,
-      githubIssueId: true
-    }
-  });
-
-  if (!feature) {
-    throw createHttpError('Feature not found for this project', 404);
-  }
-
-  if (!feature.githubIssueId) {
-    throw createHttpError('Feature has no linked GitHub issue', 400);
+  if (!task.githubIssueId) {
+    throw createHttpError('Task has no linked GitHub issue', 400);
   }
 
   const issueResponse = await octokit.issues.get({
     owner: project.githubOwner,
     repo: project.githubRepoName,
-    issue_number: feature.githubIssueId
+    issue_number: task.githubIssueId
   });
 
   const issue = issueResponse.data;
 
-  await prisma.feature.update({
-    where: { id: featureId },
+  const updatedTask = await prisma.task.update({
+    where: { id: taskId },
     data: {
       githubIssueUrl: issue.html_url,
       githubIssueState: issue.state,
-      githubSyncedAt: new Date()
+      githubIssueSyncedAt: new Date()
+    },
+    include: {
+      feature: true,
+      timeLogs: {
+        orderBy: { createdAt: 'desc' }
+      }
     }
   });
 
-  return {
-    featureId,
-    issue: {
-      number: issue.number,
-      title: issue.title,
-      state: issue.state,
-      htmlUrl: issue.html_url
-    }
-  };
+  return updatedTask;
 }
