@@ -111,3 +111,36 @@ export const updateCustomerMeeting = async (projectId, meetingId, payload) => {
 export const deleteCustomerMeeting = async (projectId, meetingId) => {
     await api.delete(`/api/projects/${projectId}/customer-meetings/${meetingId}`)
 }
+
+export const createProjectEmail = async (projectId, payload) => {
+    const response = await api.post(`/api/projects/${projectId}/emails`, payload)
+    return response.data
+}
+
+export const updateProjectEmail = async (projectId, emailId, payload) => {
+    const response = await api.put(`/api/projects/${projectId}/emails/${emailId}`, payload)
+    return response.data
+}
+
+export const deleteProjectEmail = async (projectId, emailId) => {
+    await api.delete(`/api/projects/${projectId}/emails/${emailId}`)
+}
+
+export const fetchProjectVersions = async (projectId) => {
+    const response = await api.get(`/api/projects/${projectId}/versions`)
+    return response.data
+}
+
+export const createProjectVersion = async (projectId, payload) => {
+    const response = await api.post(`/api/projects/${projectId}/versions`, payload)
+    return response.data
+}
+
+export const updateProjectVersion = async (projectId, versionId, payload) => {
+    const response = await api.put(`/api/projects/${projectId}/versions/${versionId}`, payload)
+    return response.data
+}
+
+export const deleteProjectVersion = async (projectId, versionId) => {
+    await api.delete(`/api/projects/${projectId}/versions/${versionId}`)
+}

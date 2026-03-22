@@ -1,6 +1,27 @@
 import { prisma } from '../prisma/client.js';
 
 const REQUIREMENT_STATUSES = ['OPEN', 'APPROVED', 'IMPLEMENTED', 'REJECTED'];
+const RELEASE_CHANNELS = ['DEVELOPMENT', 'RELEASE'];
+const RELEASE_STATUSES = ['PLANNED', 'APPROVED', 'RELEASED'];
+
+function normalizeEstimatedHours(value) {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (value === null || value === '') {
+    return null;
+  }
+
+  const normalized = Number(value);
+  if (!Number.isFinite(normalized) || normalized < 0) {
+    const error = new Error('estimatedHours must be a number greater than or equal to 0');
+    error.status = 400;
+    throw error;
+  }
+
+  return normalized;
+}
 
 async function userHasProjectAccess(projectId, userId) {
   if (!userId) {
@@ -70,6 +91,39 @@ async function ensureRequirementBelongsToProject(projectId, requirementId) {
   return normalizedRequirementId;
 }
 
+async function ensureVersionBelongsToProject(projectId, versionId) {
+  if (versionId == null || versionId === '') {
+    return null;
+  }
+
+  const normalizedVersionId = Number(versionId);
+  const version = await prisma.releaseVersion.findFirst({
+    where: {
+      id: normalizedVersionId,
+      projectId
+    },
+    select: { id: true }
+  });
+
+  if (!version) {
+    throw new Error('Release version not found for this project');
+  }
+
+  return normalizedVersionId;
+}
+
+async function requireVersionBelongsToProject(projectId, versionId) {
+  const normalizedVersionId = await ensureVersionBelongsToProject(projectId, versionId);
+
+  if (!normalizedVersionId) {
+    const error = new Error('Requirement must be assigned to a release version');
+    error.status = 400;
+    throw error;
+  }
+
+  return normalizedVersionId;
+}
+
 async function normalizeAttendeeIds(projectId, attendeeIds) {
   if (!Array.isArray(attendeeIds)) {
     return [];
@@ -117,7 +171,80 @@ function requirementInclude() {
         name: true,
         status: true
       }
+    },
+    targetVersion: {
+      select: {
+        id: true,
+        versionTag: true,
+        name: true,
+        channel: true,
+        status: true,
+        releaseDate: true
+      }
     }
+  };
+}
+
+async function loadRequirementDetails(projectId, requirementId) {
+  const requirement = await prisma.requirement.findFirst({
+    where: {
+      id: requirementId,
+      projectId
+    }
+  });
+
+  if (!requirement) {
+    return null;
+  }
+
+  const meeting = requirement.meetingId
+    ? await prisma.customerMeeting.findFirst({
+      where: {
+        id: requirement.meetingId,
+        projectId
+      },
+      select: {
+        id: true,
+        title: true,
+        date: true
+      }
+    })
+    : null;
+
+  const features = await prisma.feature.findMany({
+    where: {
+      projectId,
+      requirementId
+    },
+    select: {
+      id: true,
+      name: true,
+      status: true
+    }
+  });
+
+  const targetVersion = requirement.targetVersionId
+    ? await prisma.releaseVersion.findFirst({
+      where: {
+        id: requirement.targetVersionId,
+        projectId
+      },
+      select: {
+        id: true,
+        versionTag: true,
+        name: true,
+        channel: true,
+        status: true,
+        releaseDate: true
+      }
+    })
+    : null;
+
+  return {
+    ...requirement,
+    meeting,
+    features,
+    targetVersion
   };
 }
 
@@ -147,10 +274,148 @@ function customerMeetingInclude() {
       select: {
         id: true,
         title: true,
-        status: true
+        status: true,
+        estimatedHours: true
       }
     }
   };
+}
+
+function projectEmailSelect() {
+  return {
+    id: true,
+    subject: true,
+    sender: true,
+    recipients: true,
+    summary: true,
+    sentAt: true,
+    createdAt: true,
+    updatedAt: true
+  };
+}
+
+function releaseVersionSelect() {
+  return {
+    id: true,
+    versionTag: true,
+    name: true,
+    channel: true,
+    status: true,
+    releaseDate: true,
+    createdAt: true,
+    updatedAt: true
+  };
+}
+
+export async function listProjectVersionsService(projectId, userId) {
+  if (!(await ensureProjectAccess(projectId, userId))) {
+    return null;
+  }
+
+  return prisma.releaseVersion.findMany({
+    where: { projectId },
+    orderBy: [
+      { createdAt: 'desc' }
+    ],
+    select: releaseVersionSelect()
+  });
+}
+
+export async function createProjectVersionService(projectId, data, userId) {
+  if (!(await ensureProjectAccess(projectId, userId))) {
+    return null;
+  }
+
+  const versionTag = String(data?.versionTag || '').trim();
+  if (!versionTag) {
+    throw new Error('versionTag is required');
+  }
+
+  const channel = data?.channel || 'DEVELOPMENT';
+  if (!RELEASE_CHANNELS.includes(channel)) {
+    throw new Error(`Invalid release channel: ${channel}`);
+  }
+
+  const status = data?.status || 'PLANNED';
+  if (!RELEASE_STATUSES.includes(status)) {
+    throw new Error(`Invalid release status: ${status}`);
+  }
+
+  return prisma.releaseVersion.create({
+    data: {
+      projectId,
+      versionTag,
+      name: data?.name?.trim() || null,
+      channel,
+      status,
+      releaseDate: data?.releaseDate ? new Date(data.releaseDate) : null
+    },
+    select: releaseVersionSelect()
+  });
+}
+
+export async function updateProjectVersionService(projectId, versionId, data, userId) {
+  if (!(await ensureProjectAccess(projectId, userId))) {
+    return null;
+  }
+
+  const existingVersion = await prisma.releaseVersion.findFirst({
+    where: {
+      id: versionId,
+      projectId
+    },
+    select: { id: true }
+  });
+
+  if (!existingVersion) {
+    return null;
+  }
+
+  if (data.channel && !RELEASE_CHANNELS.includes(data.channel)) {
+    throw new Error(`Invalid release channel: ${data.channel}`);
+  }
+
+  if (data.status && !RELEASE_STATUSES.includes(data.status)) {
+    throw new Error(`Invalid release status: ${data.status}`);
+  }
+
+  return prisma.releaseVersion.update({
+    where: { id: versionId },
+    data: {
+      versionTag: data.versionTag === undefined ? undefined : String(data.versionTag).trim(),
+      name: data.name === undefined ? undefined : (String(data.name || '').trim() || null),
+      channel: data.channel,
+      status: data.status,
+      releaseDate: data.releaseDate === undefined ? undefined : (data.releaseDate ? new Date(data.releaseDate) : null)
+    },
+    select: releaseVersionSelect()
+  });
+}
+
+export async function deleteProjectVersionService(projectId, versionId, userId) {
+  if (!(await ensureProjectAccess(projectId, userId))) {
+    return { count: 0 };
+  }
+
+  const linkedRequirements = await prisma.requirement.count({
+    where: {
+      projectId,
+      targetVersionId: versionId
+    }
+  });
+
+  if (linkedRequirements > 0) {
+    const error = new Error('Cannot delete a version that is used by requirements');
+    error.status = 400;
+    throw error;
+  }
+
+  return prisma.releaseVersion.deleteMany({
+    where: {
+      id: versionId,
+      projectId
+    }
+  });
 }
 
 export async function createRequirementService(projectId, data, userId) {
@@ -163,18 +428,23 @@ export async function createRequirementService(projectId, data, userId) {
   }
 
   const meetingId = await ensureMeetingBelongsToProject(projectId, data.meetingId);
+  const targetVersionId = await requireVersionBelongsToProject(projectId, data.targetVersionId);
 
-  return prisma.requirement.create({
+  const createdRequirement = await prisma.requirement.create({
     data: {
       projectId,
       title: data.title,
       description: data.description ?? null,
       priority: data.priority != null && data.priority !== '' ? Number(data.priority) : null,
+      estimatedHours: normalizeEstimatedHours(data.estimatedHours) ?? null,
       status: data.status ?? 'OPEN',
-      meetingId
+      meetingId,
+      targetVersionId
     },
-    include: requirementInclude()
+    select: { id: true }
   });
+
+  return loadRequirementDetails(projectId, createdRequirement.id);
 }
 
 export async function updateRequirementService(projectId, requirementId, data, userId) {
@@ -187,7 +457,7 @@ export async function updateRequirementService(projectId, requirementId, data, u
       id: requirementId,
       projectId
     },
-    select: { id: true, status: true, features: { select: { id: true } } }
+    select: { id: true, status: true, targetVersionId: true, features: { select: { id: true } } }
   });
 
   if (!existingRequirement) {
@@ -202,6 +472,16 @@ export async function updateRequirementService(projectId, requirementId, data, u
     ? undefined
     : await ensureMeetingBelongsToProject(projectId, data.meetingId);
 
+  const targetVersionId = data.targetVersionId === undefined
+    ? existingRequirement.targetVersionId
+    : await requireVersionBelongsToProject(projectId, data.targetVersionId);
+
+  if (!targetVersionId) {
+    const error = new Error('Requirement must be assigned to a release version');
+    error.status = 400;
+    throw error;
+  }
+
   const updatedRequirement = await prisma.requirement.update({
     where: { id: requirementId },
     data: {
@@ -212,10 +492,12 @@ export async function updateRequirementService(projectId, requirementId, data, u
         : data.priority === null || data.priority === ''
           ? null
           : Number(data.priority),
+      estimatedHours: normalizeEstimatedHours(data.estimatedHours),
       status: data.status,
-      meetingId: data.meetingId === undefined ? undefined : meetingId
+      meetingId: data.meetingId === undefined ? undefined : meetingId,
+      targetVersionId: data.targetVersionId === undefined ? undefined : targetVersionId
     },
-    include: requirementInclude()
+    select: { id: true }
   });
 
   // Automatically create a feature when requirement is approved
@@ -262,7 +544,7 @@ export async function updateRequirementService(projectId, requirementId, data, u
     }
   }
 
-  return updatedRequirement;
+  return loadRequirementDetails(projectId, updatedRequirement.id);
 }
 
 export async function deleteRequirementService(projectId, requirementId, userId) {
@@ -357,7 +639,6 @@ export async function createCustomerMeetingService(projectId, data, userId) {
   if (!(await ensureProjectAccess(projectId, userId))) {
     return null;
   }
-
   const attendeeIds = await normalizeAttendeeIds(projectId, data.attendeeIds);
 
   return prisma.customerMeeting.create({
@@ -373,6 +654,73 @@ export async function createCustomerMeetingService(projectId, data, userId) {
         : undefined
     },
     include: customerMeetingInclude()
+  });
+}
+
+export async function createProjectEmailService(projectId, data, userId) {
+  if (!(await ensureProjectAccess(projectId, userId))) {
+    return null;
+  }
+
+  return prisma.projectEmail.create({
+    data: {
+      projectId,
+      subject: String(data.subject || '').trim(),
+      sender: data.sender ? String(data.sender).trim() : null,
+      recipients: Array.isArray(data.recipients)
+        ? data.recipients.map((entry) => String(entry).trim()).filter(Boolean)
+        : [],
+      summary: data.summary ? String(data.summary).trim() : null,
+      sentAt: data.sentAt ? new Date(data.sentAt) : new Date()
+    },
+    select: projectEmailSelect()
+  });
+}
+
+export async function updateProjectEmailService(projectId, emailId, data, userId) {
+  if (!(await ensureProjectAccess(projectId, userId))) {
+    return null;
+  }
+
+  const existingEmail = await prisma.projectEmail.findFirst({
+    where: {
+      id: emailId,
+      projectId
+    },
+    select: { id: true }
+  });
+
+  if (!existingEmail) {
+    return null;
+  }
+
+  return prisma.projectEmail.update({
+    where: { id: emailId },
+    data: {
+      subject: data.subject === undefined ? undefined : String(data.subject || '').trim(),
+      sender: data.sender === undefined ? undefined : (data.sender ? String(data.sender).trim() : null),
+      recipients: data.recipients === undefined
+        ? undefined
+        : (Array.isArray(data.recipients)
+          ? data.recipients.map((entry) => String(entry).trim()).filter(Boolean)
+          : []),
+      summary: data.summary === undefined ? undefined : (data.summary ? String(data.summary).trim() : null),
+      sentAt: data.sentAt === undefined ? undefined : (data.sentAt ? new Date(data.sentAt) : null)
+    },
+    select: projectEmailSelect()
+  });
+}
+
+export async function deleteProjectEmailService(projectId, emailId, userId) {
+  if (!(await ensureProjectAccess(projectId, userId))) {
+    return { count: 0 };
+  }
+
+  return prisma.projectEmail.deleteMany({
+    where: {
+      id: emailId,
+      projectId
+    }
   });
 }
 
@@ -441,41 +789,76 @@ export async function getProjectPlanningService(projectId, userId) {
     return null;
   }
 
-  return prisma.project.findFirst({
-    where: {
-      id: projectId,
-      members: {
-        some: {
-          userId
-        }
+  const where = {
+    id: projectId,
+    members: {
+      some: {
+        userId
       }
-    },
+    }
+  };
+
+  const project = await prisma.project.findFirst({ where });
+
+  if (!project) {
+    return null;
+  }
+
+  // Run related planning queries sequentially to avoid concurrent queries on a single pg client.
+  const members = await prisma.projectMember.findMany({
+    where: { projectId },
     include: {
-      members: {
-        include: {
-          user: {
-            select: {
-              id: true,
-              email: true,
-              githubLogin: true
-            }
-          }
+      user: {
+        select: {
+          id: true,
+          email: true,
+          githubLogin: true
         }
-      },
-      requirements: {
-        orderBy: { createdAt: 'desc' },
-        include: requirementInclude()
-      },
-      milestones: {
-        orderBy: [
-          { completed: 'asc' },
-          { dueDate: 'asc' }
-        ]
-      },
-      customerMeetings: {
-        orderBy: { date: 'desc' },
-        include: customerMeetingInclude()
       }
     }
   });
+
+  const requirements = await prisma.requirement.findMany({
+    where: { projectId },
+    orderBy: { createdAt: 'desc' },
+    include: requirementInclude()
+  });
+
+  const versions = await prisma.releaseVersion.findMany({
+    where: { projectId },
+    orderBy: [
+      { createdAt: 'desc' }
+    ],
+    select: releaseVersionSelect()
+  });
+
+  const milestones = await prisma.milestone.findMany({
+    where: { projectId },
+    orderBy: [
+      { completed: 'asc' },
+      { dueDate: 'asc' }
+    ]
+  });
+
+  const customerMeetings = await prisma.customerMeeting.findMany({
+    where: { projectId },
+    orderBy: { date: 'desc' },
+    include: customerMeetingInclude()
+  });
+
+  const emails = await prisma.projectEmail.findMany({
+    where: { projectId },
+    orderBy: { sentAt: 'desc' },
+    select: projectEmailSelect()
+  });
+
+  return {
+    ...project,
+    members,
+    requirements,
+    versions,
+    milestones,
+    customerMeetings,
+    emails
+  };
 }

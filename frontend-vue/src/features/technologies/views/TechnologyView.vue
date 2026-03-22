@@ -68,6 +68,7 @@
 import { ref, onMounted } from "vue";
 import { useTechnologiesStore } from "../store.js";
 import TechnologyForm from "../components/TechnologyForm.vue";
+import { confirmDialog } from "../../shared/confirmDialog.js";
 
 export default {
     components: { TechnologyForm },
@@ -100,7 +101,15 @@ export default {
         };
 
         const deleteTechnology = async (id) => {
-            if (confirm("Er du sikker på at du vil slette denne teknologien?")) {
+            const technology = technoStore.technologies.find((entry) => entry.id === id);
+            const confirmed = await confirmDialog.open({
+                title: 'Slett teknologi',
+                message: `Slette teknologien ${technology?.name || ''}?`,
+                details: 'Teknologien blir fjernet fra listen.',
+                confirmText: 'Slett',
+                tone: 'danger'
+            });
+            if (confirmed) {
                 await technoStore.deleteTechnology(id);
             }
         };

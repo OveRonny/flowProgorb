@@ -5,6 +5,10 @@ import {
     fetchProjects,
     fetchProjectById,
     fetchProjectPlanning,
+    fetchProjectVersions,
+    createProjectVersion,
+    updateProjectVersion,
+    deleteProjectVersion,
     createProject,
     updateProject,
     deleteProject,
@@ -22,7 +26,10 @@ import {
     deleteMilestone,
     createCustomerMeeting,
     updateCustomerMeeting,
-    deleteCustomerMeeting
+    deleteCustomerMeeting,
+    createProjectEmail,
+    updateProjectEmail,
+    deleteProjectEmail
 } from './api'
 
 export const useProjectsStore = defineStore('projects', {
@@ -30,6 +37,7 @@ export const useProjectsStore = defineStore('projects', {
         projects: [],
         project: null,
         planningProject: null,
+        versions: [],
         githubRepo: null,
         tasks: {},
         loading: false,
@@ -67,6 +75,7 @@ export const useProjectsStore = defineStore('projects', {
             try {
                 const project = await fetchProjectPlanning(projectId)
                 this.planningProject = project
+                this.versions = project.versions || []
                 const projectIndex = this.projects.findIndex((p) => p.id === projectId)
                 if (projectIndex !== -1) {
                     this.projects[projectIndex] = {
@@ -88,6 +97,73 @@ export const useProjectsStore = defineStore('projects', {
                 return project
             } catch (err) {
                 this.error = err.response?.data?.message || err.response?.data?.error || 'Failed to load project planning'
+            } finally {
+                this.loading = false
+            }
+        },
+        async fetchVersions(projectId) {
+            this.loading = true
+            this.error = null
+            try {
+                const versions = await fetchProjectVersions(projectId)
+                this.versions = versions || []
+
+                if (this.planningProject?.id === projectId) {
+                    this.planningProject = {
+                        ...this.planningProject,
+                        versions: this.versions
+                    }
+                }
+
+                return this.versions
+            } catch (err) {
+                this.error = err.response?.data?.message || 'Failed to load project versions'
+                return []
+            } finally {
+                this.loading = false
+            }
+        },
+        async createVersion(projectId, payload) {
+            this.loading = true
+            this.error = null
+            try {
+                const version = await createProjectVersion(projectId, payload)
+                this.versions = [version, ...(this.versions || [])]
+                return version
+            } catch (err) {
+                this.error = err.response?.data?.message || 'Failed to create version'
+                return null
+            } finally {
+                this.loading = false
+            }
+        },
+        async updateVersion(projectId, versionId, payload) {
+            this.loading = true
+            this.error = null
+            try {
+                const version = await updateProjectVersion(projectId, versionId, payload)
+                const index = this.versions.findIndex((item) => item.id === versionId)
+                if (index !== -1) {
+                    this.versions[index] = version
+                }
+                return version
+            } catch (err) {
+                this.error = err.response?.data?.message || 'Failed to update version'
+                return null
+            } finally {
+                this.loading = false
+            }
+        },
+        async deleteVersion(projectId, versionId) {
+            this.loading = true
+            this.error = null
+            try {
+                await deleteProjectVersion(projectId, versionId)
+                this.versions = this.versions.filter((item) => item.id !== versionId)
+                return true
+            } catch (err) {
+                this.error = err.response?.data?.message || 'Failed to delete version'
+                return false
             } finally {
                 this.loading = false
             }
@@ -120,6 +196,27 @@ export const useProjectsStore = defineStore('projects', {
 
                 const projectId = newProject.id
 
+                const versionDrafts = Array.isArray(draft?.versions) ? draft.versions : []
+                const versionKeyMap = new Map()
+
+                for (const version of versionDrafts) {
+                    const versionTag = String(version?.versionTag || '').trim()
+                    if (!versionTag) {
+                        continue
+                    }
+
+                    const createdVersion = await createProjectVersion(projectId, {
+                        versionTag,
+                        name: String(version?.name || '').trim() || null,
+                        channel: 'DEVELOPMENT',
+                        status: 'PLANNED'
+                    })
+
+                    if (version?.key && createdVersion?.id) {
+                        versionKeyMap.set(version.key, createdVersion.id)
+                    }
+                }
+
                 const meetingDrafts = Array.isArray(draft?.meetings) ? draft.meetings : []
                 for (const meeting of meetingDrafts) {
                     if (!meeting?.title) {
@@ -140,12 +237,18 @@ export const useProjectsStore = defineStore('projects', {
                         continue
                     }
 
+                    const targetVersionId = versionKeyMap.get(requirement.versionKey)
+                    if (!targetVersionId) {
+                        throw new Error('All requirements in planning draft must be assigned to a version')
+                    }
+
                     await createRequirement(projectId, {
                         title: requirement.title,
                         description: requirement.description || '',
                         status: 'OPEN',
                         priority: requirement.priority ?? null,
-                        meetingId: null
+                        meetingId: null,
+                        targetVersionId
                     })
                 }
 
@@ -406,6 +509,41 @@ export const useProjectsStore = defineStore('projects', {
                 await deleteCustomerMeeting(projectId, meetingId)
             } catch (err) {
                 this.error = err.response?.data?.message || 'Failed to delete customer meeting'
+            } finally {
+                this.loading = false
+            }
+        },
+        async createProjectEmail(projectId, payload) {
+            this.loading = true
+            this.error = null
+            try {
+                return await createProjectEmail(projectId, payload)
+            } catch (err) {
+                this.error = err.response?.data?.message || 'Failed to create project email'
+                return null
+            } finally {
+                this.loading = false
+            }
+        },
+        async updateProjectEmail(projectId, emailId, payload) {
+            this.loading = true
+            this.error = null
+            try {
+                return await updateProjectEmail(projectId, emailId, payload)
+            } catch (err) {
+                this.error = err.response?.data?.message || 'Failed to update project email'
+                return null
+            } finally {
+                this.loading = false
+            }
+        },
+        async deleteProjectEmail(projectId, emailId) {
+            this.loading = true
+            this.error = null
+            try {
+                await deleteProjectEmail(projectId, emailId)
+            } catch (err) {
+                this.error = err.response?.data?.message || 'Failed to delete project email'
             } finally {
                 this.loading = false
             }

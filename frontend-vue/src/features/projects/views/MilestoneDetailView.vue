@@ -63,6 +63,7 @@ import { ref, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProjectsStore } from '../store.js'
 import Modal from '../../../components/Modal.vue'
+import { confirmDialog } from '../../shared/confirmDialog.js'
 import MilestoneForm from '../components/MilestoneForm.vue'
 
 const route = useRoute()
@@ -106,7 +107,14 @@ async function handleUpdate(payload) {
 }
 
 async function handleDelete() {
-  if (!confirm('Slette denne milepælen?')) {
+  const confirmed = await confirmDialog.open({
+    title: 'Slett milepæl',
+    message: `Slette milepælen ${milestone.value?.title || ''}?`,
+    details: 'Milepælen blir fjernet fra prosjektplanen.',
+    confirmText: 'Slett',
+    tone: 'danger'
+  })
+  if (!confirmed) {
     return
   }
   await projectStore.deleteMilestone(projectId.value, milestoneId.value)

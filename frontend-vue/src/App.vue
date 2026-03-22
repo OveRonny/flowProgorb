@@ -4,6 +4,7 @@
     <main class="flex-1">
       <router-view />
     </main>
+    <ConfirmDialogHost />
     <Footer />
   </div>
 </template>
@@ -12,6 +13,7 @@
 import { onMounted, ref } from 'vue'
 import Navbar from './components/Navbar.vue';
 import Footer from './components/Footer.vue';
+import ConfirmDialogHost from './components/ConfirmDialogHost.vue'
 
 const isDark = ref(false)
 

@@ -66,7 +66,7 @@
       </div>
 
       <Modal v-model="showEditModal" title="Rediger krav">
-        <RequirementForm v-if="requirement" :requirement="requirement" :meetings="meetings" @submit="handleUpdate" />
+        <RequirementForm v-if="requirement" :requirement="requirement" :meetings="meetings" :versions="versions" @submit="handleUpdate" />
       </Modal>
     </div>
   </div>
@@ -77,6 +77,7 @@ import { ref, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProjectsStore } from '../store.js'
 import Modal from '../../../components/Modal.vue'
+import { confirmDialog } from '../../shared/confirmDialog.js'
 import RequirementForm from '../components/RequirementForm.vue'
 
 const route = useRoute()
@@ -85,6 +86,7 @@ const projectStore = useProjectsStore()
 
 const requirement = ref(null)
 const meetings = ref([])
+const versions = ref([])
 const loading = ref(false)
 const showEditModal = ref(false)
 
@@ -98,6 +100,7 @@ async function loadRequirement() {
     if (planning) {
       requirement.value = planning.requirements?.find((r) => r.id === requirementId.value)
       meetings.value = planning.customerMeetings || []
+      versions.value = planning.versions || []
     }
   } finally {
     loading.value = false
@@ -122,7 +125,14 @@ async function handleUpdate(payload) {
 }
 
 async function handleDelete() {
-  if (!confirm('Slette dette kravet?')) {
+  const confirmed = await confirmDialog.open({
+    title: 'Slett krav',
+    message: `Slette kravet ${requirement.value?.title || ''}?`,
+    details: 'Kravet blir fjernet fra planleggingen.',
+    confirmText: 'Slett',
+    tone: 'danger'
+  })
+  if (!confirmed) {
     return
   }
   await projectStore.deleteRequirement(projectId.value, requirementId.value)

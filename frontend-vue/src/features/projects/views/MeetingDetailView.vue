@@ -72,6 +72,7 @@ import { ref, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProjectsStore } from '../store.js'
 import Modal from '../../../components/Modal.vue'
+import { confirmDialog } from '../../shared/confirmDialog.js'
 import CustomerMeetingForm from '../components/CustomerMeetingForm.vue'
 
 const route = useRoute()
@@ -117,7 +118,14 @@ async function handleUpdate(payload) {
 }
 
 async function handleDelete() {
-  if (!confirm('Slette dette møtet?')) {
+  const confirmed = await confirmDialog.open({
+    title: 'Slett kundemøte',
+    message: `Slette møtet ${meeting.value?.title || ''}?`,
+    details: 'Møtet blir fjernet fra planleggingen.',
+    confirmText: 'Slett',
+    tone: 'danger'
+  })
+  if (!confirmed) {
     return
   }
   await projectStore.deleteCustomerMeeting(projectId.value, meetingId.value)

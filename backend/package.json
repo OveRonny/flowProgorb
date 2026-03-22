@@ -5,8 +5,10 @@
   "main": "index.js",
   "scripts": {
     "postinstall": "node ./node_modules/prisma/build/index.js generate && node ./scripts/ensure-node-modules-tsconfig.cjs",
-    "dev": "nodemon src/server.js",
+    "dev": "node ./node_modules/prisma/build/index.js generate && nodemon src/server.js",
+    "dev:trace": "node ./node_modules/prisma/build/index.js generate && node --trace-deprecation src/server.js",
     "start": "node ./node_modules/prisma/build/index.js generate && node src/server.js",
+    "start:trace": "node ./node_modules/prisma/build/index.js generate && node --trace-deprecation src/server.js",
     "test": "node --test"
   },
   "keywords": [],
@@ -17,7 +19,7 @@
     "@octokit/auth-app": "^8.2.0",
     "@octokit/auth-oauth-device": "^8.0.3",
     "@octokit/rest": "^22.0.1",
-    "@prisma/adapter-pg": "^7.4.2",
+    "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",

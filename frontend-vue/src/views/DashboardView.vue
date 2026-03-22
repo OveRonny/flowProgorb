@@ -191,47 +191,50 @@
             <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Tidsplanlegging</h2>
           </div>
 
-          <div class="grid gap-3 sm:grid-cols-3">
-            <div class="rounded-lg border border-blue-100 bg-blue-50 p-3 dark:border-blue-900/40 dark:bg-blue-900/20">
-              <p class="text-xs font-semibold text-blue-700 dark:text-blue-300">Estimert tid</p>
-              <p class="mt-1 text-xl font-bold text-blue-800 dark:text-blue-200">{{ timePlanning.estimatedHours }} t</p>
-            </div>
-            <div class="rounded-lg border border-emerald-100 bg-emerald-50 p-3 dark:border-emerald-900/40 dark:bg-emerald-900/20">
-              <p class="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Logget tid</p>
-              <p class="mt-1 text-xl font-bold text-emerald-800 dark:text-emerald-200">{{ timePlanning.loggedHours }} t</p>
-            </div>
-            <div
-              class="rounded-lg border p-3"
-              :class="timePlanning.varianceMinutes > 0
-                ? 'border-red-100 bg-red-50 dark:border-red-900/40 dark:bg-red-900/20'
-                : 'border-amber-100 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-900/20'"
-            >
-              <p class="text-xs font-semibold" :class="timePlanning.varianceMinutes > 0
-                ? 'text-red-700 dark:text-red-300'
-                : 'text-amber-700 dark:text-amber-300'">
-                {{ timePlanning.varianceMinutes > 0 ? 'Over estimat' : 'Gjenstår' }}
-              </p>
-              <p class="mt-1 text-xl font-bold" :class="timePlanning.varianceMinutes > 0
-                ? 'text-red-800 dark:text-red-200'
-                : 'text-amber-800 dark:text-amber-200'">
-                {{ timePlanning.varianceHours }} t
-              </p>
-            </div>
-          </div>
-
-          <div class="space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-900/40">
-            <div class="flex items-center justify-between text-xs font-semibold text-gray-700 dark:text-gray-300">
-              <span>Tidsbruk mot estimat</span>
-              <span>{{ timePlanning.progressPercent }}%</span>
-            </div>
-            <div class="h-2 w-full rounded-full bg-gray-200 dark:bg-gray-700">
+          <div class="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-900/40">
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">Tidslogg</h3>
+            <div class="grid gap-3 sm:grid-cols-3">
+              <div class="rounded-lg border border-blue-100 bg-blue-50 p-3 dark:border-blue-900/40 dark:bg-blue-900/20">
+                <p class="text-xs font-semibold text-blue-700 dark:text-blue-300">Estimert tid</p>
+                <p class="mt-1 text-xl font-bold text-blue-800 dark:text-blue-200">{{ timePlanning.estimatedHours }} t</p>
+              </div>
+              <div class="rounded-lg border border-emerald-100 bg-emerald-50 p-3 dark:border-emerald-900/40 dark:bg-emerald-900/20">
+                <p class="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Logget tid</p>
+                <p class="mt-1 text-xl font-bold text-emerald-800 dark:text-emerald-200">{{ timePlanning.loggedHours }} t</p>
+              </div>
               <div
-                class="h-2 rounded-full transition-all"
-                :class="timePlanning.progressPercent >= 100 ? 'bg-red-500' : 'bg-blue-500'"
-                :style="{ width: `${timePlanning.progressPercent}%` }"
-              ></div>
+                class="rounded-lg border p-3"
+                :class="timePlanning.varianceMinutes > 0
+                  ? 'border-red-100 bg-red-50 dark:border-red-900/40 dark:bg-red-900/20'
+                  : 'border-amber-100 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-900/20'"
+              >
+                <p class="text-xs font-semibold" :class="timePlanning.varianceMinutes > 0
+                  ? 'text-red-700 dark:text-red-300'
+                  : 'text-amber-700 dark:text-amber-300'">
+                  {{ timePlanning.varianceMinutes > 0 ? 'Over estimat' : 'Gjenstår' }}
+                </p>
+                <p class="mt-1 text-xl font-bold" :class="timePlanning.varianceMinutes > 0
+                  ? 'text-red-800 dark:text-red-200'
+                  : 'text-amber-800 dark:text-amber-200'">
+                  {{ timePlanning.varianceHours }} t
+                </p>
+              </div>
             </div>
-            <p class="text-xs text-gray-600 dark:text-gray-400">{{ timePlanning.overBudgetTasks }} oppgaver er over estimert tid</p>
+
+            <div class="space-y-2 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800">
+              <div class="flex items-center justify-between text-xs font-semibold text-gray-700 dark:text-gray-300">
+                <span>Tidsbruk mot estimat</span>
+                <span>{{ timePlanning.progressPercent }}%</span>
+              </div>
+              <div class="h-2 w-full rounded-full bg-gray-200 dark:bg-gray-700">
+                <div
+                  class="h-2 rounded-full transition-all"
+                  :class="timePlanning.progressPercent >= 100 ? 'bg-red-500' : 'bg-blue-500'"
+                  :style="{ width: `${timePlanning.progressPercent}%` }"
+                ></div>
+              </div>
+              <p class="text-xs text-gray-600 dark:text-gray-400">{{ timePlanning.overBudgetTasks }} oppgaver er over estimert tid</p>
+            </div>
           </div>
 
           <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/40">
@@ -255,11 +258,80 @@
           </div>
         </section>
 
+        <!-- Hourly Pricing -->
+        <section class="space-y-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+          <div class="mb-1 flex items-center gap-2 border-b border-gray-200 pb-3 dark:border-gray-700">
+            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 text-sm font-bold text-white">4</span>
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Timepriser</h2>
+          </div>
+
+          <div v-if="projectHourlyRate" class="grid gap-3 sm:grid-cols-2">
+            <div class="rounded-md border border-blue-100 bg-blue-50 p-3 dark:border-blue-900/40 dark:bg-blue-900/20">
+              <p class="text-xs font-semibold text-blue-700 dark:text-blue-300">Timepris</p>
+              <p class="mt-1 text-lg font-bold text-blue-800 dark:text-blue-200">{{ formatCurrency(projectHourlyRate) }}</p>
+            </div>
+            <div class="rounded-md border border-indigo-100 bg-indigo-50 p-3 dark:border-indigo-900/40 dark:bg-indigo-900/20">
+              <p class="text-xs font-semibold text-indigo-700 dark:text-indigo-300">Estimert kostnad</p>
+              <p class="mt-1 text-lg font-bold text-indigo-800 dark:text-indigo-200">{{ formatCurrency(timePlanning.estimatedCost) }}</p>
+            </div>
+            <div class="rounded-md border border-emerald-100 bg-emerald-50 p-3 dark:border-emerald-900/40 dark:bg-emerald-900/20">
+              <p class="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Logget kostnad</p>
+              <p class="mt-1 text-lg font-bold text-emerald-800 dark:text-emerald-200">{{ formatCurrency(timePlanning.loggedCost) }}</p>
+            </div>
+            <div class="rounded-md border p-3" :class="timePlanning.costVariance >= 0
+              ? 'border-red-100 bg-red-50 dark:border-red-900/40 dark:bg-red-900/20'
+              : 'border-amber-100 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-900/20'">
+              <p class="text-xs font-semibold" :class="timePlanning.costVariance >= 0
+                ? 'text-red-700 dark:text-red-300'
+                : 'text-amber-700 dark:text-amber-300'">
+                {{ timePlanning.costVariance >= 0 ? 'Kostnad over estimat' : 'Kostnad gjenstår' }}
+              </p>
+              <p class="mt-1 text-lg font-bold" :class="timePlanning.costVariance >= 0
+                ? 'text-red-800 dark:text-red-200'
+                : 'text-amber-800 dark:text-amber-200'">
+                {{ formatCurrency(Math.abs(timePlanning.costVariance)) }}
+              </p>
+            </div>
+
+            <template v-if="projectOfferPrice">
+              <div class="rounded-md border border-sky-100 bg-sky-50 p-3 dark:border-sky-900/40 dark:bg-sky-900/20">
+                <p class="text-xs font-semibold text-sky-700 dark:text-sky-300">Tilbudspris</p>
+                <p class="mt-1 text-lg font-bold text-sky-800 dark:text-sky-200">{{ formatCurrency(projectOfferPrice) }}</p>
+              </div>
+              <div class="rounded-md border border-cyan-100 bg-cyan-50 p-3 dark:border-cyan-900/40 dark:bg-cyan-900/20">
+                <p class="text-xs font-semibold text-cyan-700 dark:text-cyan-300">Brukt av tilbud</p>
+                <p class="mt-1 text-lg font-bold text-cyan-800 dark:text-cyan-200">{{ offerUsage.usedPercent.toFixed(1) }}%</p>
+                <p class="mt-1 text-xs text-cyan-700/80 dark:text-cyan-300/80">{{ formatCurrency(offerUsage.usedCost) }}</p>
+              </div>
+              <div class="rounded-md border p-3" :class="offerUsage.remainingCost >= 0
+                ? 'border-emerald-100 bg-emerald-50 dark:border-emerald-900/40 dark:bg-emerald-900/20'
+                : 'border-red-100 bg-red-50 dark:border-red-900/40 dark:bg-red-900/20'">
+                <p class="text-xs font-semibold" :class="offerUsage.remainingCost >= 0
+                  ? 'text-emerald-700 dark:text-emerald-300'
+                  : 'text-red-700 dark:text-red-300'">
+                  {{ offerUsage.remainingCost >= 0 ? 'Gjenstår av tilbud' : 'Over tilbud' }}
+                </p>
+                <p class="mt-1 text-lg font-bold" :class="offerUsage.remainingCost >= 0
+                  ? 'text-emerald-800 dark:text-emerald-200'
+                  : 'text-red-800 dark:text-red-200'">
+                  {{ formatCurrency(Math.abs(offerUsage.remainingCost)) }}
+                </p>
+              </div>
+            </template>
+          </div>
+          <p v-else class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-300">
+            Sett timepris på prosjektet for å følge prosjektkostnad fra tidslogging.
+          </p>
+          <p v-if="projectHourlyRate && !projectOfferPrice" class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700 dark:border-blue-900/40 dark:bg-blue-900/20 dark:text-blue-300">
+            Legg til tilbudspris på prosjektet for å se hvor mye av tilbudet som er brukt.
+          </p>
+        </section>
+
         <!-- Development Board -->
         <section class="space-y-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 lg:col-span-2">
           <div class="mb-1 flex items-center justify-between gap-2 border-b border-gray-200 pb-3 dark:border-gray-700">
             <div class="flex items-center gap-2">
-              <span class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 text-sm font-bold text-white">4</span>
+              <span class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 text-sm font-bold text-white">5</span>
               <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Utviklingsboard</h2>
             </div>
             <router-link
@@ -319,7 +391,7 @@
         <!-- Project Overview & Recent Activity -->
         <section class="space-y-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 lg:col-span-2">
           <div class="mb-1 flex items-center gap-2 border-b border-gray-200 pb-3 dark:border-gray-700">
-            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 text-sm font-bold text-white">5</span>
+            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 text-sm font-bold text-white">6</span>
             <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Prosjektoversikt</h2>
           </div>
 
@@ -490,6 +562,23 @@ const totalLoggedMinutes = computed(() => {
 })
 
 const totalVarianceMinutes = computed(() => totalLoggedMinutes.value - totalEstimatedMinutes.value)
+const projectHourlyRate = computed(() => {
+  const rate = Number(currentProject.value?.hourlyRate)
+  if (!Number.isFinite(rate) || rate <= 0) {
+    return null
+  }
+
+  return rate
+})
+
+const projectOfferPrice = computed(() => {
+  const offer = Number(currentProject.value?.offerPrice)
+  if (!Number.isFinite(offer) || offer <= 0) {
+    return null
+  }
+
+  return offer
+})
 
 const deadlineMilestones = computed(() => {
   return allMilestones.value
@@ -519,7 +608,23 @@ const timePlanning = computed(() => {
     varianceHours: (Math.abs(variance) / 60).toFixed(1),
     varianceMinutes: variance,
     progressPercent: Math.min(Math.max(percent, 0), 100),
-    overBudgetTasks
+    overBudgetTasks,
+    estimatedCost: ((projectHourlyRate.value || 0) * estimated) / 60,
+    loggedCost: ((projectHourlyRate.value || 0) * logged) / 60,
+    costVariance: (((projectHourlyRate.value || 0) * logged) / 60) - (((projectHourlyRate.value || 0) * estimated) / 60)
+  }
+})
+
+const offerUsage = computed(() => {
+  const offerPrice = projectOfferPrice.value || 0
+  const usedCost = timePlanning.value.loggedCost
+  const usedPercent = offerPrice > 0 ? (usedCost / offerPrice) * 100 : 0
+  const remainingCost = offerPrice - usedCost
+
+  return {
+    usedCost,
+    usedPercent,
+    remainingCost
   }
 })
 
@@ -579,6 +684,14 @@ function activityIcon(type) {
 function formatDate(date) {
   if (!date) return 'Ikke satt'
   return new Date(date).toLocaleDateString('no-NO', { month: 'short', day: 'numeric' })
+}
+
+function formatCurrency(value) {
+  return new Intl.NumberFormat('no-NO', {
+    style: 'currency',
+    currency: 'NOK',
+    maximumFractionDigits: 0
+  }).format(Number(value) || 0)
 }
 
 function formatRelativeTime(date) {

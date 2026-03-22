@@ -137,6 +137,7 @@ import { useProjectsStore } from '../../projects/store.js'
 import { useTechnologiesStore } from '../../technologies/store.js'
 import { useModulesStore } from '@/features/modules/store.js'
 import { calculateTaskCollectionProgress } from '../../shared/progress.js'
+import { confirmDialog } from '../../shared/confirmDialog.js'
 import FeatureCard from '../components/FeatureCard.vue'
 import FeatureForm from '../components/FeatureForm.vue'
 import Modal from '../../../components/Modal.vue'
@@ -280,7 +281,14 @@ const handleUpdate = async (feature) => {
 }
 
 const handleDelete = async (feature) => {
-    if (!confirm('Slette denne featuren?')) {
+    const confirmed = await confirmDialog.open({
+        title: 'Slett funksjon',
+        message: `Slette funksjonen ${feature.name}?`,
+        details: 'Funksjonen blir fjernet fra prosjektet.',
+        confirmText: 'Slett',
+        tone: 'danger'
+    })
+    if (!confirmed) {
         return
     }
 

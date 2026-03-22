@@ -68,6 +68,7 @@ import { ref, onMounted } from "vue";
 import { useModulesStore } from "../store.js";
 import { useProjectsStore } from "../../projects/store.js";
 import ModuleForm from "../components/ModuleForm.vue";
+import { confirmDialog } from "../../shared/confirmDialog.js";
 
 export default {
     components: { ModuleForm },
@@ -105,7 +106,15 @@ export default {
         };
 
         const deleteModule = async (id) => {
-            if (!confirm("Er du sikker på at du vil slette denne modulen?")) return;
+            const moduleEntry = moduleStore.modules.find((entry) => entry.id === id);
+            const confirmed = await confirmDialog.open({
+                title: 'Slett modul',
+                message: `Slette modulen ${moduleEntry?.name || ''}?`,
+                details: 'Modulen blir fjernet fra oversikten.',
+                confirmText: 'Slett',
+                tone: 'danger'
+            });
+            if (!confirmed) return;
             await moduleStore.deleteModule(id);
         };
 

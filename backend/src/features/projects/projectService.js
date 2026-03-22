@@ -26,6 +26,44 @@ function calculateProjectProgressFromFeatures(features) {
   return 0;
 }
 
+function normalizeHourlyRate(value) {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (value === null || value === '') {
+    return null;
+  }
+
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    const error = new Error('hourlyRate must be a positive integer');
+    error.status = 400;
+    throw error;
+  }
+
+  return parsed;
+}
+
+function normalizeOfferPrice(value) {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (value === null || value === '') {
+    return null;
+  }
+
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    const error = new Error('offerPrice must be a positive integer');
+    error.status = 400;
+    throw error;
+  }
+
+  return parsed;
+}
+
 export async function getAllProjectsService(userId) {
     if (!userId) {
       return [];
@@ -135,7 +173,9 @@ export async function createProjectService(data) {
       githubRepoId,
       githubDefaultBranch,
       githubOwner,
-      githubRepoName
+      githubRepoName,
+      hourlyRate,
+      offerPrice
     } = data;
 
     if (!userId) {
@@ -168,6 +208,8 @@ export async function createProjectService(data) {
         githubDefaultBranch: githubDefaultBranch ?? null,
         githubOwner: githubOwner ?? null,
         githubRepoName: githubRepoName ?? null,
+        hourlyRate: normalizeHourlyRate(hourlyRate) ?? null,
+        offerPrice: normalizeOfferPrice(offerPrice) ?? null,
         members: {
           create: {
             userId,
@@ -227,12 +269,16 @@ export async function updateProjectService(id, data, userId) {
       githubRepoId: data.githubRepoId,
       githubDefaultBranch: data.githubDefaultBranch,
       githubOwner: data.githubOwner,
-      githubRepoName: data.githubRepoName
+      githubRepoName: data.githubRepoName,
+      hourlyRate: normalizeHourlyRate(data.hourlyRate),
+      offerPrice: normalizeOfferPrice(data.offerPrice)
     },
     select: {
       id: true,
       name: true,
       description: true,
+      hourlyRate: true,
+      offerPrice: true,
       status: true,
       deadline: true,
       priority: true,

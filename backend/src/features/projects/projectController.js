@@ -13,6 +13,10 @@ import {
 } from './githubService.js';
 import {
     getProjectPlanningService,
+    listProjectVersionsService,
+    createProjectVersionService,
+    updateProjectVersionService,
+    deleteProjectVersionService,
     createRequirementService,
     updateRequirementService,
     deleteRequirementService,
@@ -21,7 +25,10 @@ import {
     deleteMilestoneService,
     createCustomerMeetingService,
     updateCustomerMeetingService,
-    deleteCustomerMeetingService
+    deleteCustomerMeetingService,
+    createProjectEmailService,
+    updateProjectEmailService,
+    deleteProjectEmailService
 } from './planningService.js';
 
 export const getAllProjectsController = handleAsync(async (req, res) => {
@@ -101,6 +108,48 @@ export const getProjectPlanningController = handleAsync(async (req, res) => {
     }
 
     res.json(project);
+});
+
+export const listProjectVersionsController = handleAsync(async (req, res) => {
+    const projectId = parseId(req.params.id);
+    const versions = await listProjectVersionsService(projectId, req.user?.userId);
+    if (!versions) {
+        return res.status(404).json({ error: 'Project not found' });
+    }
+
+    res.json(versions);
+});
+
+export const createProjectVersionController = handleAsync(async (req, res) => {
+    const projectId = parseId(req.params.id);
+    const version = await createProjectVersionService(projectId, req.body || {}, req.user?.userId);
+    if (!version) {
+        return res.status(404).json({ error: 'Project not found' });
+    }
+
+    res.status(201).json(version);
+});
+
+export const updateProjectVersionController = handleAsync(async (req, res) => {
+    const projectId = parseId(req.params.id);
+    const versionId = parseId(req.params.versionId);
+    const version = await updateProjectVersionService(projectId, versionId, req.body || {}, req.user?.userId);
+    if (!version) {
+        return res.status(404).json({ error: 'Version not found' });
+    }
+
+    res.json(version);
+});
+
+export const deleteProjectVersionController = handleAsync(async (req, res) => {
+    const projectId = parseId(req.params.id);
+    const versionId = parseId(req.params.versionId);
+    const result = await deleteProjectVersionService(projectId, versionId, req.user?.userId);
+    if (!result.count) {
+        return res.status(404).json({ error: 'Version not found' });
+    }
+
+    res.status(204).send();
 });
 
 export const createRequirementController = handleAsync(async (req, res) => {
@@ -194,6 +243,38 @@ export const deleteCustomerMeetingController = handleAsync(async (req, res) => {
     const result = await deleteCustomerMeetingService(projectId, meetingId, req.user?.userId);
     if (!result.count) {
         return res.status(404).json({ error: 'Customer meeting not found' });
+    }
+
+    res.status(204).send();
+});
+
+export const createProjectEmailController = handleAsync(async (req, res) => {
+    const projectId = parseId(req.params.id);
+    const email = await createProjectEmailService(projectId, req.body || {}, req.user?.userId);
+    if (!email) {
+        return res.status(404).json({ error: 'Project not found' });
+    }
+
+    res.status(201).json(email);
+});
+
+export const updateProjectEmailController = handleAsync(async (req, res) => {
+    const projectId = parseId(req.params.id);
+    const emailId = parseId(req.params.emailId);
+    const email = await updateProjectEmailService(projectId, emailId, req.body || {}, req.user?.userId);
+    if (!email) {
+        return res.status(404).json({ error: 'Project email not found' });
+    }
+
+    res.json(email);
+});
+
+export const deleteProjectEmailController = handleAsync(async (req, res) => {
+    const projectId = parseId(req.params.id);
+    const emailId = parseId(req.params.emailId);
+    const result = await deleteProjectEmailService(projectId, emailId, req.user?.userId);
+    if (!result.count) {
+        return res.status(404).json({ error: 'Project email not found' });
     }
 
     res.status(204).send();

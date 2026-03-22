@@ -9,10 +9,21 @@
         <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ title }}</h2>
         <button
           @click="$emit('update:modelValue', false)"
-          class="rounded-md px-2 py-1 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+          type="button"
+          class="rounded-md p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200"
           aria-label="Lukk dialog"
         >
-          ?
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            class="h-5 w-5"
+            aria-hidden="true"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18" />
+          </svg>
         </button>
       </div>
 

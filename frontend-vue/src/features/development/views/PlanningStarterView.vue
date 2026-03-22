@@ -4,7 +4,7 @@
       <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-900/20">
         <h1 class="text-2xl font-bold text-amber-900 dark:text-amber-100">Start med planlegging</h1>
         <p class="mt-1 text-sm text-amber-800 dark:text-amber-200">
-          Her kan du planlegge krav, milepæler og kundemøter før prosjektet opprettes.
+          Her kan du planlegge versjoner, krav, milepæler og kundemøter før prosjektet opprettes.
         </p>
       </div>
 
@@ -41,12 +41,41 @@
         </div>
       </section>
 
+      <section class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
+        <div class="mb-4 flex items-center justify-between">
+          <div>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Versjoner</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Krav må kobles til en versjon.</p>
+          </div>
+          <button class="rounded bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700" @click="addVersion">Ny versjon</button>
+        </div>
+        <div class="space-y-3">
+          <div v-for="(version, index) in draft.versions" :key="version.key" class="grid gap-3 rounded-lg border border-gray-200 p-3 md:grid-cols-[1.1fr_1fr_auto] dark:border-gray-700">
+            <input
+              v-model="version.versionTag"
+              type="text"
+              placeholder="v1.0.0"
+              class="w-full rounded border border-gray-300 px-2 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            />
+            <input
+              v-model="version.name"
+              type="text"
+              placeholder="Navn (valgfritt)"
+              class="w-full rounded border border-gray-300 px-2 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            />
+            <button class="text-xs font-medium text-red-600 hover:text-red-700" @click="removeVersion(index)">Fjern</button>
+          </div>
+          <p v-if="!draft.versions.length" class="text-sm text-gray-500 dark:text-gray-400">Ingen versjoner lagt til.</p>
+        </div>
+      </section>
+
       <section class="grid gap-6 lg:grid-cols-3">
         <article class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
           <div class="mb-3 flex items-center justify-between">
             <h3 class="font-semibold text-gray-900 dark:text-gray-100">Krav</h3>
-            <button class="rounded bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700" @click="addRequirement">Nytt krav</button>
+            <button :disabled="!draft.versions.length" class="rounded bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60" @click="addRequirement">Nytt krav</button>
           </div>
+          <p v-if="!draft.versions.length" class="mb-3 text-sm text-amber-600 dark:text-amber-300">Opprett en versjon før du legger til krav.</p>
           <div class="space-y-3">
             <div v-for="(requirement, index) in draft.requirements" :key="`req-${index}`" class="space-y-2 rounded-lg border border-gray-200 p-3 dark:border-gray-700">
               <input
@@ -61,6 +90,15 @@
                 placeholder="Beskrivelse"
                 class="w-full rounded border border-gray-300 px-2 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
               />
+              <select
+                v-model="requirement.versionKey"
+                class="w-full rounded border border-gray-300 px-2 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+              >
+                <option value="" disabled>Velg versjon</option>
+                <option v-for="version in draft.versions" :key="version.key" :value="version.key">
+                  {{ version.versionTag || 'Uten navn' }}{{ version.name ? ` - ${version.name}` : '' }}
+                </option>
+              </select>
               <button class="text-xs font-medium text-red-600 hover:text-red-700" @click="removeRequirement(index)">Fjern</button>
             </div>
             <p v-if="!draft.requirements.length" class="text-sm text-gray-500 dark:text-gray-400">Ingen krav lagt til.</p>
@@ -162,13 +200,37 @@ const draft = reactive({
   name: '',
   description: '',
   deadline: '',
+  versions: [],
   requirements: [],
   milestones: [],
   meetings: []
 })
 
+let nextDraftVersionKey = 1
+
+function addVersion() {
+  draft.versions.push({ key: `version-${nextDraftVersionKey++}`, versionTag: '', name: '' })
+}
+
+function removeVersion(index) {
+  const [removedVersion] = draft.versions.splice(index, 1)
+  if (!removedVersion) {
+    return
+  }
+
+  for (const requirement of draft.requirements) {
+    if (requirement.versionKey === removedVersion.key) {
+      requirement.versionKey = draft.versions[0]?.key || ''
+    }
+  }
+}
+
 function addRequirement() {
-  draft.requirements.push({ title: '', description: '', priority: null })
+  if (!draft.versions.length) {
+    return
+  }
+
+  draft.requirements.push({ title: '', description: '', priority: null, versionKey: draft.versions[0].key })
 }
 
 function removeRequirement(index) {
@@ -200,19 +262,36 @@ async function savePlanning() {
     return
   }
 
+  const versions = draft.versions
+    .map((entry) => ({
+      key: entry.key,
+      versionTag: String(entry.versionTag || '').trim(),
+      name: String(entry.name || '').trim()
+    }))
+    .filter((entry) => entry.versionTag)
+
+  const requirements = draft.requirements
+    .map((entry) => ({
+      title: String(entry.title || '').trim(),
+      description: String(entry.description || '').trim(),
+      priority: entry.priority,
+      versionKey: entry.versionKey || ''
+    }))
+    .filter((entry) => entry.title)
+
+  if (requirements.some((entry) => !entry.versionKey || !versions.some((version) => version.key === entry.versionKey))) {
+    error.value = 'Alle krav må være koblet til en gyldig versjon.'
+    return
+  }
+
   saving.value = true
   try {
     const createdProject = await projectStore.createProjectFromPlanningDraft({
       name: projectName,
       description: String(draft.description || '').trim(),
       deadline: draft.deadline || null,
-      requirements: draft.requirements
-        .map((entry) => ({
-          title: String(entry.title || '').trim(),
-          description: String(entry.description || '').trim(),
-          priority: entry.priority
-        }))
-        .filter((entry) => entry.title),
+      versions,
+      requirements,
       milestones: draft.milestones
         .map((entry) => ({
           title: String(entry.title || '').trim(),

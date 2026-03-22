@@ -20,6 +20,27 @@
                 <p class="text-gray-600 dark:text-gray-400">
                     {{ feature?.description }}
                 </p>
+                <div class="mt-4 rounded-md border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-700/40">
+                    <p class="text-sm font-semibold text-gray-700 dark:text-gray-200">Timepris for prosjekt</p>
+                    <div class="mt-2 flex flex-wrap items-center gap-2">
+                        <input
+                            v-model="hourlyRateInput"
+                            type="number"
+                            min="1"
+                            placeholder="Kr per time"
+                            class="w-44 rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                        />
+                        <button
+                            class="rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                            :disabled="savingHourlyRate || !canSaveHourlyRate"
+                            @click="saveHourlyRate"
+                        >
+                            {{ savingHourlyRate ? 'Lagrer...' : 'Lagre timepris' }}
+                        </button>
+                    </div>
+                    <p v-if="projectHourlyRate" class="mt-2 text-xs text-gray-600 dark:text-gray-300">Aktiv timepris: {{ formatCurrency(projectHourlyRate) }} / time</p>
+                    <p v-else class="mt-2 text-xs text-amber-700 dark:text-amber-300">Sett timepris for å følge prosjektkostnad fra tidslogging.</p>
+                </div>
                 <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
                     <div class="rounded-md bg-gray-100 dark:bg-gray-700/60 px-3 py-2">
                         <p class="text-gray-500 dark:text-gray-400">Total estimert</p>
@@ -40,6 +61,20 @@
                         </p>
                     </div>
                 </div>
+                <div v-if="projectHourlyRate" class="mt-3 grid grid-cols-1 gap-3 text-sm md:grid-cols-3">
+                    <div class="rounded-md border border-indigo-100 bg-indigo-50 px-3 py-2 dark:border-indigo-900/40 dark:bg-indigo-900/20">
+                        <p class="text-gray-500 dark:text-gray-400">Estimert kostnad</p>
+                        <p class="font-semibold text-indigo-800 dark:text-indigo-200">{{ formatCurrency(estimatedCost) }}</p>
+                    </div>
+                    <div class="rounded-md border border-emerald-100 bg-emerald-50 px-3 py-2 dark:border-emerald-900/40 dark:bg-emerald-900/20">
+                        <p class="text-gray-500 dark:text-gray-400">Logget kostnad</p>
+                        <p class="font-semibold text-emerald-800 dark:text-emerald-200">{{ formatCurrency(loggedCost) }}</p>
+                    </div>
+                    <div class="rounded-md border px-3 py-2" :class="costVariance >= 0 ? 'border-red-100 bg-red-50 dark:border-red-900/40 dark:bg-red-900/20' : 'border-amber-100 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-900/20'">
+                        <p class="text-gray-500 dark:text-gray-400">Kostnadsavvik</p>
+                        <p class="font-semibold" :class="costVariance >= 0 ? 'text-red-800 dark:text-red-200' : 'text-amber-800 dark:text-amber-200'">{{ formatCurrency(Math.abs(costVariance)) }}</p>
+                    </div>
+                </div>
                 <div class="mt-4 text-sm">
                     <p class="font-semibold text-gray-700 dark:text-gray-300 mb-2">Tid per task</p>
                     <div v-if="taskTimeSummaries.length" class="space-y-2">
@@ -53,6 +88,15 @@
                                     ? 'text-red-700 dark:text-red-300'
                                     : 'text-green-700 dark:text-green-300'">
                                     {{ item.varianceLabel }}: <span class="font-semibold">{{ item.varianceHours }}t</span>
+                                </p>
+                            </div>
+                            <div v-if="projectHourlyRate" class="mt-2 grid grid-cols-1 md:grid-cols-3 gap-1 text-xs">
+                                <p class="text-indigo-700 dark:text-indigo-300">Estimert pris: <span class="font-semibold">{{ formatCurrency(item.estimatedCost) }}</span></p>
+                                <p class="text-emerald-700 dark:text-emerald-300">Logget pris: <span class="font-semibold">{{ formatCurrency(item.loggedCost) }}</span></p>
+                                <p :class="item.costVariance >= 0
+                                    ? 'text-red-700 dark:text-red-300'
+                                    : 'text-amber-700 dark:text-amber-300'">
+                                    Avvik pris: <span class="font-semibold">{{ formatCurrency(Math.abs(item.costVariance)) }}</span>
                                 </p>
                             </div>
                         </div>
@@ -122,6 +166,7 @@ import TaskCard from '../components/TaskCard.vue'
 import TaskForm from '../components/TaskForm.vue'
 import Modal from '@/components/Modal.vue'
 import { useProjectsStore } from '../../projects/store.js'
+import { confirmDialog } from '../../shared/confirmDialog.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -131,15 +176,35 @@ const featureId = Number(route.params.featureId)
 const projectStore = useProjectsStore()
 
 const showModal = ref(false)
+const hourlyRateInput = ref('')
+const savingHourlyRate = ref(false)
 const webhookRefreshMs = 8000
 let refreshIntervalId = null
 
 const tasks = computed(() => tasksStore.tasks)
 const feature = computed(() => tasks.value[0]?.feature ?? null)
 const githubConnected = computed(() => Boolean(projectStore.project?.githubOwner && projectStore.project?.githubRepoName))
+const projectHourlyRate = computed(() => {
+    const value = Number(projectStore.project?.hourlyRate)
+    if (!Number.isFinite(value) || value <= 0) {
+        return null
+    }
+
+    return value
+})
 const featuresPath = computed(() => {
     const projectId = Number(route.query.projectId || feature.value?.projectId)
     return Number.isInteger(projectId) && projectId > 0 ? `/project/${projectId}` : ''
+})
+
+const canSaveHourlyRate = computed(() => {
+    const trimmed = String(hourlyRateInput.value ?? '').trim()
+    if (!trimmed) {
+        return false
+    }
+
+    const parsed = Number(trimmed)
+    return Number.isInteger(parsed) && parsed > 0
 })
 
 const totalEstimatedMinutes = computed(() =>
@@ -156,12 +221,16 @@ const totalLoggedHours = computed(() => (totalLoggedMinutes.value / 60).toFixed(
 const totalVarianceMinutes = computed(() => totalLoggedMinutes.value - totalEstimatedMinutes.value)
 const totalVarianceHours = computed(() => (Math.abs(totalVarianceMinutes.value) / 60).toFixed(2))
 const totalVarianceLabel = computed(() => (totalVarianceMinutes.value > 0 ? 'Over estimat' : 'Gjenstar'))
+const estimatedCost = computed(() => ((projectHourlyRate.value || 0) * totalEstimatedMinutes.value) / 60)
+const loggedCost = computed(() => ((projectHourlyRate.value || 0) * totalLoggedMinutes.value) / 60)
+const costVariance = computed(() => loggedCost.value - estimatedCost.value)
 
 const taskTimeSummaries = computed(() =>
     tasks.value.map((task) => {
         const loggedMinutes = (task.timeLogs ?? []).reduce((sum, log) => sum + (Number(log.minutes) || 0), 0)
         const estimatedMinutes = (Number(task.estimatedHours) || 0) * 60
         const varianceMinutes = loggedMinutes - estimatedMinutes
+        const hourlyRate = projectHourlyRate.value || 0
 
         return {
             id: task.id,
@@ -170,7 +239,10 @@ const taskTimeSummaries = computed(() =>
             loggedHours: (loggedMinutes / 60).toFixed(2),
             varianceHours: (Math.abs(varianceMinutes) / 60).toFixed(2),
             varianceLabel: varianceMinutes > 0 ? 'Over estimat' : 'Gjenstar',
-            isOver: varianceMinutes > 0
+            isOver: varianceMinutes > 0,
+            estimatedCost: (hourlyRate * estimatedMinutes) / 60,
+            loggedCost: (hourlyRate * loggedMinutes) / 60,
+            costVariance: ((hourlyRate * loggedMinutes) / 60) - ((hourlyRate * estimatedMinutes) / 60)
         }
     })
 )
@@ -206,6 +278,14 @@ onMounted(async () => {
         }
     }, webhookRefreshMs)
 })
+
+watch(
+    () => projectStore.project?.hourlyRate,
+    (value) => {
+        hourlyRateInput.value = value ? String(value) : ''
+    },
+    { immediate: true }
+)
 
 onUnmounted(() => {
     if (refreshIntervalId) {
@@ -277,7 +357,13 @@ const deleteTask = async (task) => {
         return
     }
 
-    const confirmed = window.confirm(`Slette oppgaven "${task.title}"?`)
+    const confirmed = await confirmDialog.open({
+        title: 'Slett oppgave',
+        message: `Slette oppgaven ${task.title}?`,
+        details: 'Oppgaven og tilhørende innhold blir fjernet.',
+        confirmText: 'Slett',
+        tone: 'danger'
+    })
     if (!confirmed) {
         return
     }
@@ -288,5 +374,33 @@ const deleteTask = async (task) => {
     if (projectId > 0) {
         await projectStore.fetchProjectById(projectId)
     }
+}
+
+const saveHourlyRate = async () => {
+    const projectId = Number(route.query.projectId || feature.value?.projectId)
+    if (!projectId || !canSaveHourlyRate.value) {
+        return
+    }
+
+    savingHourlyRate.value = true
+    try {
+        const parsedRate = Number(hourlyRateInput.value)
+        const updated = await projectStore.updateProject(projectId, { hourlyRate: parsedRate })
+        if (!updated) {
+            return
+        }
+
+        await projectStore.fetchProjectById(projectId)
+    } finally {
+        savingHourlyRate.value = false
+    }
+}
+
+const formatCurrency = (value) => {
+    return new Intl.NumberFormat('no-NO', {
+        style: 'currency',
+        currency: 'NOK',
+        maximumFractionDigits: 0
+    }).format(Number(value) || 0)
 }
 </script>

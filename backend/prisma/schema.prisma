@@ -51,6 +51,8 @@ model Project {
   members ProjectMember[]
   name        String
   description String?
+  hourlyRate  Int?
+  offerPrice  Int?
 
   githubRepoUrl       String?
   githubRepoId        Int?
@@ -67,9 +69,59 @@ model Project {
   updatedAt           DateTime        @updatedAt
   activities          Activity[]
   customerMeetings    CustomerMeeting[]
+  emails              ProjectEmail[]
   requirements Requirement[]
   milestones   Milestone[]
+  versions     ReleaseVersion[]
  
+}
+
+model ProjectEmail {
+  id         Int      @id @default(autoincrement())
+  project     Project  @relation(fields: [projectId], references: [id])
+  projectId    Int
+
+  subject     String
+  sender      String?
+  recipients  String[]
+  summary     String?
+  sentAt      DateTime @default(now())
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
+}
+
+model ReleaseVersion {
+  id          Int      @id @default(autoincrement())
+  project     Project  @relation(fields: [projectId], references: [id])
+  projectId   Int
+
+  versionTag  String
+  name        String?
+  channel     ReleaseChannel @default(DEVELOPMENT)
+  status      ReleaseStatus  @default(PLANNED)
+  releaseDate DateTime?
+
+  requirements Requirement[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, versionTag])
+  @@index([projectId])
+}
+
+enum ReleaseChannel {
+  DEVELOPMENT
+  RELEASE
+}
+
+enum ReleaseStatus {
+  PLANNED
+  APPROVED
+  RELEASED
 }
 
 enum ProjectStatus {
@@ -238,11 +290,15 @@ model Requirement {
   title       String
   description String?
   priority    Int?
+  estimatedHours Float?
 
   status RequirementStatus @default(OPEN)
   
   meeting   CustomerMeeting? @relation(fields: [meetingId], references: [id])
   meetingId Int?
+
+  targetVersion   ReleaseVersion? @relation(fields: [targetVersionId], references: [id])
+  targetVersionId Int?
 
   features  Feature[]
 
