@@ -4,16 +4,26 @@
       <div>
         <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Planlegging</h1>
         <p class="mt-1 text-gray-600 dark:text-gray-400">Administrer kundemøter, milepæler og krav på tvers av alle prosjekter</p>
+        <router-link
+          to="/planning/start"
+          class="mt-3 inline-block rounded bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-700 dark:bg-amber-700 dark:hover:bg-amber-600"
+        >
+          Start planlegging før prosjekt
+        </router-link>
+        <label class="mt-3 inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+          <input v-model="showArchived" type="checkbox" />
+          Vis arkiverte (På vent)
+        </label>
       </div>
 
       <p v-if="loading" class="text-gray-600 dark:text-gray-400">Laster planleggingsdata...</p>
-      <p v-else-if="projects.length === 0" class="rounded border border-gray-200 bg-white px-4 py-6 text-center text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+      <p v-else-if="visibleProjects.length === 0" class="rounded border border-gray-200 bg-white px-4 py-6 text-center text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
         Ingen prosjekter funnet.
       </p>
 
       <div v-else class="grid gap-6 lg:grid-cols-3">
         <div
-          v-for="project in projects"
+          v-for="project in visibleProjects"
           :key="project.id"
           class="rounded border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800"
         >
@@ -79,6 +89,21 @@
             >
               Vis detaljer
             </router-link>
+
+            <button
+              v-if="project.status !== 'ON_HOLD'"
+              class="block w-full rounded bg-gray-700 px-3 py-2 text-center text-xs font-medium text-white transition hover:bg-gray-800"
+              @click="archiveProject(project.id)"
+            >
+              Arkiver prosjekt
+            </button>
+            <button
+              v-else
+              class="block w-full rounded bg-emerald-600 px-3 py-2 text-center text-xs font-medium text-white transition hover:bg-emerald-700"
+              @click="restoreProject(project.id)"
+            >
+              Gjenopprett prosjekt
+            </button>
           </div>
         </div>
       </div>
@@ -92,8 +117,12 @@ import { useProjectsStore } from '../../projects/store.js'
 
 const projectStore = useProjectsStore()
 const loading = ref(false)
+const showArchived = ref(false)
 
 const projects = computed(() => projectStore.projects || [])
+const visibleProjects = computed(() =>
+  projects.value.filter((project) => showArchived.value || project.status !== 'ON_HOLD')
+)
 
 async function loadProjects() {
   loading.value = true
@@ -112,4 +141,22 @@ async function loadProjects() {
 onMounted(() => {
   loadProjects()
 })
+
+async function archiveProject(projectId) {
+  const updated = await projectStore.updateProject(projectId, { status: 'ON_HOLD' })
+  if (!updated) {
+    return
+  }
+
+  await loadProjects()
+}
+
+async function restoreProject(projectId) {
+  const updated = await projectStore.updateProject(projectId, { status: 'PLANNED' })
+  if (!updated) {
+    return
+  }
+
+  await loadProjects()
+}
 </script>

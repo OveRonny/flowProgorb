@@ -13,6 +13,7 @@ import {
     deleteProjectFeature,
     connectProjectGithubRepo,
     fetchProjectGithubRepo,
+    publishProjectGithubRelease,
     createRequirement,
     updateRequirement,
     deleteRequirement,
@@ -97,8 +98,77 @@ export const useProjectsStore = defineStore('projects', {
             try {
                 const newProject = await createProject(projectData)
                 this.projects.push(newProject)
+                return newProject
             } catch (err) {
                 this.error = err.response?.data?.message || 'Failed to create project'
+                return null
+            } finally {
+                this.loading = false
+            }
+        },
+        async createProjectFromPlanningDraft(draft) {
+            this.loading = true
+            this.error = null
+            try {
+                const newProject = await createProject({
+                    name: draft?.name,
+                    description: draft?.description,
+                    deadline: draft?.deadline || null
+                })
+
+                this.projects.push(newProject)
+
+                const projectId = newProject.id
+
+                const meetingDrafts = Array.isArray(draft?.meetings) ? draft.meetings : []
+                for (const meeting of meetingDrafts) {
+                    if (!meeting?.title) {
+                        continue
+                    }
+
+                    await createCustomerMeeting(projectId, {
+                        title: meeting.title,
+                        notes: meeting.notes || '',
+                        date: meeting.date || null,
+                        attendeeIds: []
+                    })
+                }
+
+                const requirementDrafts = Array.isArray(draft?.requirements) ? draft.requirements : []
+                for (const requirement of requirementDrafts) {
+                    if (!requirement?.title) {
+                        continue
+                    }
+
+                    await createRequirement(projectId, {
+                        title: requirement.title,
+                        description: requirement.description || '',
+                        status: 'OPEN',
+                        priority: requirement.priority ?? null,
+                        meetingId: null
+                    })
+                }
+
+                const milestoneDrafts = Array.isArray(draft?.milestones) ? draft.milestones : []
+                for (const milestone of milestoneDrafts) {
+                    if (!milestone?.title) {
+                        continue
+                    }
+
+                    await createMilestone(projectId, {
+                        title: milestone.title,
+                        description: milestone.description || '',
+                        dueDate: milestone.dueDate || null,
+                        completed: false,
+                        orderIndex: milestone.orderIndex ?? null
+                    })
+                }
+
+                await this.fetchProjectPlanning(projectId)
+                return newProject
+            } catch (err) {
+                this.error = err.response?.data?.message || 'Failed to create project from planning draft'
+                return null
             } finally {
                 this.loading = false
             }
@@ -110,10 +180,15 @@ export const useProjectsStore = defineStore('projects', {
                 const updatedProject = await updateProject(projectId, projectData)
                 const index = this.projects.findIndex(p => p.id === projectId)
                 if (index !== -1) {
-                    this.projects[index] = updatedProject
+                    this.projects[index] = {
+                        ...this.projects[index],
+                        ...updatedProject
+                    }
                 }
+                return updatedProject
             } catch (err) {
                 this.error = err.response?.data?.message || 'Failed to update project'
+                return null
             } finally {
                 this.loading = false
             }
@@ -213,6 +288,18 @@ export const useProjectsStore = defineStore('projects', {
                 return result
             } catch (err) {
                 this.error = err.response?.data?.message || 'Failed to load GitHub repo details'
+                return null
+            } finally {
+                this.loading = false
+            }
+        },
+        async publishGithubRelease(projectId, payload) {
+            this.loading = true
+            this.error = null
+            try {
+                return await publishProjectGithubRelease(projectId, payload)
+            } catch (err) {
+                this.error = err.response?.data?.message || 'Failed to publish GitHub release'
                 return null
             } finally {
                 this.loading = false

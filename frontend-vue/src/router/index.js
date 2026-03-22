@@ -14,6 +14,7 @@ import MilestoneDetailView from '../features/projects/views/MilestoneDetailView.
 import MeetingDetailView from '../features/projects/views/MeetingDetailView.vue'
 import DevelopmentView from '../features/development/views/DevelopmentView.vue'
 import PlanningOverviewView from '../features/development/views/PlanningOverviewView.vue'
+import PlanningStarterView from '../features/development/views/PlanningStarterView.vue'
 import TechnologyView from "@/features/technologies/views/TechnologyView.vue"
 import FeatureView from "@/features/features/views/FeatureView.vue"
 import ModuleView from "@/features/modules/views/ModuleView.vue"
@@ -57,6 +58,18 @@ const routes = [{
   },
   {
     path: "/",
+    redirect: '/dashboard'
+  },
+  {
+    path: '/planning/start',
+    name: 'PlanningStarter',
+    component: PlanningStarterView,
+    meta: {
+      requiresAuth: true
+    }
+  },
+  {
+    path: "/dashboard",
     name: "Home",
     component: DashboardView,
     meta: {
@@ -175,7 +188,7 @@ router.beforeEach((to) => {
   }
 
   if (guestOnly && hasToken) {
-    return { path: '/project' }
+    return { path: '/dashboard' }
   }
 
   return true

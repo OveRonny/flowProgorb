@@ -91,11 +91,12 @@ defineEmits(['toggle-theme'])
 
 const visibleLinks = computed(() => {
   const baseLinks = [
-    { to: '/', label: 'Oversikt' }
+    { to: '/dashboard', label: 'Oversikt' }
   ]
 
   if (auth.token) {
     return [
+      { to: '/planning/start', label: 'Planstart' },
       ...baseLinks,
       { to: '/development', label: 'Utvikling' },
       { to: '/planning-overview', label: 'Planlegging' },

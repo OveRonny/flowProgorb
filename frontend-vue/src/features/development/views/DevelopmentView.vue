@@ -12,7 +12,7 @@
 
       <p v-if="authStore.loading" class="text-gray-600 dark:text-gray-400">Laster prosjekter...</p>
       <p v-else-if="projects.length === 0" class="rounded border border-gray-200 bg-white px-4 py-6 text-center text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
-        Ingen prosjekter funnet. Opprett et for å komme i gang.
+        Ingen aktive prosjekter funnet. Opprett eller gjenopprett et prosjekt i planlegging.
       </p>
 
       <div v-else class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -57,7 +57,9 @@ import { useProjectsStore } from '../../projects/store.js'
 
 const authStore = useProjectsStore()
 
-const projects = computed(() => authStore.projects || [])
+const projects = computed(() =>
+  (authStore.projects || []).filter((project) => !['PLANNED', 'ON_HOLD'].includes(project.status))
+)
 
 authStore.fetchProjects()
 </script>

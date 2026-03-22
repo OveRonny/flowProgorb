@@ -65,6 +65,11 @@ export const fetchProjectGithubRepo = async (projectId) => {
     return response.data;
 }
 
+export const publishProjectGithubRelease = async (projectId, payload) => {
+    const response = await api.post(`/api/projects/${projectId}/github/releases`, payload);
+    return response.data;
+}
+
 export const createRequirement = async (projectId, payload) => {
     const response = await api.post(`/api/projects/${projectId}/requirements`, payload)
     return response.data

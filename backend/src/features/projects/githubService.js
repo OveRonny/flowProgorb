@@ -167,6 +167,29 @@ export async function getProjectGithubRepoService(projectId, userId) {
     octokit.repos.listBranches({ owner: project.githubOwner, repo: project.githubRepoName, per_page: 100 })
   ]);
 
+  let latestRelease = null;
+  try {
+    const { data } = await octokit.repos.getLatestRelease({
+      owner: project.githubOwner,
+      repo: project.githubRepoName
+    });
+
+    latestRelease = {
+      id: data.id,
+      tagName: data.tag_name,
+      name: data.name,
+      prerelease: Boolean(data.prerelease),
+      htmlUrl: data.html_url,
+      createdAt: data.created_at,
+      publishedAt: data.published_at
+    };
+  } catch (err) {
+    // 404 means no release exists yet.
+    if (err?.status !== 404) {
+      throw err;
+    }
+  }
+
   return {
     project,
     repo: {
@@ -180,7 +203,44 @@ export async function getProjectGithubRepoService(projectId, userId) {
     branches: branchesResponse.data.map((branch) => ({
       name: branch.name,
       protected: branch.protected
-    }))
+    })),
+    latestRelease
+  };
+}
+
+export async function publishProjectGithubReleaseService(projectId, data, userId) {
+  const project = await getProjectWithRepo(projectId, userId);
+  const octokit = await getInstallationClient(project.githubOwner, project.githubRepoName);
+
+  const tagName = String(data?.tagName || '').trim();
+  if (!tagName) {
+    throw createHttpError('tagName is required (example: v1.0.0)', 400);
+  }
+
+  const releaseName = String(data?.name || tagName).trim();
+  const targetCommitish = String(data?.targetCommitish || project.githubDefaultBranch || 'main').trim();
+
+  const releaseResponse = await octokit.repos.createRelease({
+    owner: project.githubOwner,
+    repo: project.githubRepoName,
+    tag_name: tagName,
+    target_commitish: targetCommitish,
+    name: releaseName,
+    body: typeof data?.body === 'string' ? data.body : '',
+    prerelease: Boolean(data?.prerelease),
+    generate_release_notes: Boolean(data?.generateReleaseNotes)
+  });
+
+  const release = releaseResponse.data;
+  return {
+    id: release.id,
+    tagName: release.tag_name,
+    name: release.name,
+    prerelease: Boolean(release.prerelease),
+    htmlUrl: release.html_url,
+    createdAt: release.created_at,
+    publishedAt: release.published_at,
+    targetCommitish
   };
 }
 

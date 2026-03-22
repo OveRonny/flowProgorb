@@ -15,6 +15,21 @@
         {{ projectStore.error }}
       </p>
 
+      <div v-if="project" class="rounded border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-900/40 dark:bg-emerald-900/20">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <p class="text-sm text-emerald-800 dark:text-emerald-200">
+            Status: <span class="font-semibold">{{ projectStatusLabel }}</span>
+          </p>
+          <button
+            v-if="project.status === 'PLANNED'"
+            class="rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+            @click="startProjectDevelopment"
+          >
+            Kunde godkjent: Start utvikling
+          </button>
+        </div>
+      </div>
+
       <div class="grid gap-6 xl:grid-cols-3">
         <section class="rounded border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
           <div class="mb-4 flex items-center justify-between gap-2">
@@ -124,7 +139,7 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import Modal from '../../../components/Modal.vue'
 import { useProjectsStore } from '../store.js'
 import RequirementForm from '../components/RequirementForm.vue'
@@ -132,6 +147,7 @@ import MilestoneForm from '../components/MilestoneForm.vue'
 import CustomerMeetingForm from '../components/CustomerMeetingForm.vue'
 
 const route = useRoute()
+const router = useRouter()
 const projectStore = useProjectsStore()
 
 const editingRequirement = ref(null)
@@ -146,6 +162,17 @@ const requirements = computed(() => project.value?.requirements || [])
 const milestones = computed(() => project.value?.milestones || [])
 const customerMeetings = computed(() => project.value?.customerMeetings || [])
 const projectMembers = computed(() => project.value?.members || [])
+
+const projectStatusLabel = computed(() => {
+  const labels = {
+    PLANNED: 'Planlegging',
+    ACTIVE: 'Utvikling',
+    COMPLETED: 'Fullført',
+    ON_HOLD: 'På vent'
+  }
+
+  return labels[project.value?.status] || project.value?.status || 'Ukjent'
+})
 
 async function loadPlanning() {
   const projectId = Number(route.params.id)
@@ -287,6 +314,20 @@ const handleDeleteMeeting = async (meeting) => {
 
   await projectStore.deleteCustomerMeeting(project.value.id, meeting.id)
   await loadPlanning()
+}
+
+const startProjectDevelopment = async () => {
+  if (!project.value?.id) {
+    return
+  }
+
+  const updated = await projectStore.updateProject(project.value.id, { status: 'ACTIVE' })
+  if (!updated) {
+    return
+  }
+
+  await loadPlanning()
+  router.push({ name: 'Features', params: { id: project.value.id } })
 }
 
 const formatDate = (value) => {

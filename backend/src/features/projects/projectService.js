@@ -144,6 +144,17 @@ export async function createProjectService(data) {
       throw error;
     }
 
+    const userExists = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true }
+    });
+
+    if (!userExists) {
+      const error = new Error('User not found. Please log in again.');
+      error.status = 401;
+      throw error;
+    }
+
     const newProject = await prisma.project.create({
       data: {
         name,

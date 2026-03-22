@@ -9,6 +9,7 @@ import {
     connectProjectGithubRepoController,
     getProjectGithubRepoController,
     syncGithubCollaboratorsController,
+    publishProjectGithubReleaseController,
     createRequirementController,
     updateRequirementController,
     deleteRequirementController,
@@ -35,6 +36,7 @@ router.delete('/:id', authMiddleware, deleteProjectController);
 router.post('/:id/github/connect', authMiddleware, connectProjectGithubRepoController);
 router.get('/:id/github/repo', authMiddleware, getProjectGithubRepoController);
 router.post('/:id/github/sync-collaborators', authMiddleware, syncGithubCollaboratorsController);
+router.post('/:id/github/releases', authMiddleware, publishProjectGithubReleaseController);
 router.post('/:id/requirements', authMiddleware, createRequirementController);
 router.put('/:id/requirements/:requirementId', authMiddleware, updateRequirementController);
 router.delete('/:id/requirements/:requirementId', authMiddleware, deleteRequirementController);

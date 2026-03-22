@@ -29,6 +29,66 @@
                 <p v-if="githubRepoInfo" class="mt-2 text-xs text-gray-500 dark:text-gray-400">{{ githubRepoInfo }}</p>
             </div>
 
+            <div v-if="project" class="rounded border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+                <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Release vs Development</h3>
+                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                    Publiser GitHub release fra utvikling. Bruk prerelease for utviklingsversjoner.
+                </p>
+
+                <div v-if="latestReleaseText" class="mt-2 rounded border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-300">
+                    {{ latestReleaseText }}
+                </div>
+
+                <div class="mt-3 grid gap-2 md:grid-cols-2">
+                    <input
+                        v-model="releaseTag"
+                        placeholder="Tag (f.eks. v1.0.0)"
+                        class="rounded border border-gray-300 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                    />
+                    <input
+                        v-model="releaseName"
+                        placeholder="Navn (valgfritt)"
+                        class="rounded border border-gray-300 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                    />
+                </div>
+
+                <textarea
+                    v-model="releaseNotes"
+                    rows="3"
+                    placeholder="Release notes (valgfritt)"
+                    class="mt-2 w-full rounded border border-gray-300 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                />
+
+                <div class="mt-2 flex flex-wrap items-center gap-4">
+                    <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                        <input v-model="isPrerelease" type="checkbox" />
+                        Development prerelease
+                    </label>
+                    <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                        <input v-model="generateReleaseNotes" type="checkbox" />
+                        Generer release-notater automatisk
+                    </label>
+                </div>
+
+                <div class="mt-3 flex flex-wrap items-center gap-2">
+                    <button
+                        @click="publishRelease"
+                        class="rounded bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                    >
+                        Publiser release
+                    </button>
+                    <a
+                        v-if="latestReleaseUrl"
+                        :href="latestReleaseUrl"
+                        target="_blank"
+                        rel="noreferrer"
+                        class="rounded bg-gray-200 px-3 py-2 text-sm font-medium text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
+                    >
+                        Åpne siste release
+                    </a>
+                </div>
+            </div>
+
             <p v-if="projectStore.error" class="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
                 {{ projectStore.error }}
             </p>
@@ -90,6 +150,11 @@ const moduleStore = useModulesStore()
 const editingFeature = ref(null)
 const showFeatureModal = ref(false)
 const repoUrl = ref('')
+const releaseTag = ref('')
+const releaseName = ref('')
+const releaseNotes = ref('')
+const isPrerelease = ref(false)
+const generateReleaseNotes = ref(true)
 
 const project = computed(() => projectStore.project)
 const allTechnologies = computed(() => technoStore.technologies)
@@ -112,6 +177,18 @@ const githubRepoInfo = computed(() => {
 
     return `${repo.fullName} | standardgren: ${repo.defaultBranch}`
 })
+
+const latestReleaseText = computed(() => {
+    const latest = projectStore.githubRepo?.latestRelease
+    if (!latest?.tagName) {
+        return 'Ingen release publisert enda.'
+    }
+
+    const type = latest.prerelease ? 'Development prerelease' : 'Production release'
+    return `Siste release: ${latest.tagName} (${type})`
+})
+
+const latestReleaseUrl = computed(() => projectStore.githubRepo?.latestRelease?.htmlUrl || '')
 
 const projectProgressPercent = computed(() => {
     const features = projectFeatures.value
@@ -235,6 +312,33 @@ const loadGithubRepo = async () => {
     }
 
     await projectStore.fetchGithubRepo(projectId)
+}
+
+const publishRelease = async () => {
+    const projectId = Number(project.value?.id)
+    const tagName = releaseTag.value.trim()
+
+    if (!projectId || !tagName) {
+        return
+    }
+
+    const createdRelease = await projectStore.publishGithubRelease(projectId, {
+        tagName,
+        name: releaseName.value.trim() || null,
+        body: releaseNotes.value,
+        prerelease: isPrerelease.value,
+        generateReleaseNotes: generateReleaseNotes.value
+    })
+
+    if (!createdRelease) {
+        return
+    }
+
+    await projectStore.fetchGithubRepo(projectId)
+
+    releaseTag.value = ''
+    releaseName.value = ''
+    releaseNotes.value = ''
 }
 
 </script>

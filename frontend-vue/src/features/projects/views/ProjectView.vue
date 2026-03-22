@@ -18,7 +18,13 @@
     </Modal>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <ProjectCard v-for="project in filteredProjects" :key="project.id" :project="project" @click="openProject(project.id)" @delete="handleDeleteProject"/>
+      <ProjectCard
+        v-for="project in filteredProjects"
+        :key="project.id"
+        :project="project"
+        @click="openProject(project.id)"
+        @delete="handleDeleteProject"
+      />
     </div>
 
 
@@ -47,9 +53,9 @@ onMounted(() => {
 })
 
 const filteredProjects = computed(() => {
-  return projectStore.projects.filter(p =>
-    p.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-  )
+  return projectStore.projects
+    .filter((project) => !['PLANNED', 'ON_HOLD'].includes(project.status))
+    .filter((project) => project.name.toLowerCase().includes(searchQuery.value.toLowerCase()))
 })
 
 function handleAddProject(project) {

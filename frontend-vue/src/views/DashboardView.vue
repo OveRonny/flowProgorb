@@ -372,13 +372,15 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useProjectsStore } from '../features/projects/store.js'
 
 const projectStore = useProjectsStore()
 const selectedProjectId = ref(null)
 
-const projects = computed(() => projectStore.projects || [])
+const projects = computed(() =>
+  (projectStore.projects || []).filter((project) => !['PLANNED', 'ON_HOLD'].includes(project.status))
+)
 
 const currentProject = computed(() => {
   if (!selectedProjectId.value) return null
@@ -705,5 +707,16 @@ onMounted(async () => {
   await Promise.all(
     projects.value.map((project) => projectStore.fetchProjectPlanning(project.id))
   )
+})
+
+watch(projects, (nextProjects) => {
+  if (!selectedProjectId.value) {
+    return
+  }
+
+  const stillExists = nextProjects.some((project) => project.id === selectedProjectId.value)
+  if (!stillExists) {
+    selectedProjectId.value = null
+  }
 })
 </script>

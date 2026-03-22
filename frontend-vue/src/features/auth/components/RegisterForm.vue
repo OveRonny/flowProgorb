@@ -39,7 +39,7 @@ const passwordMismatch = computed(() => password.value && confirmPassword.value 
 
 function getRedirectTarget() {
     const redirect = route.query.redirect
-    return typeof redirect === 'string' && redirect.startsWith('/') ? redirect : '/project'
+    return typeof redirect === 'string' && redirect.startsWith('/') ? redirect : '/dashboard'
 }
 
 const handleRegister = async () => {

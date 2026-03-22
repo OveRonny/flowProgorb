@@ -8,7 +8,8 @@ import { getAllProjectsService, getProjectByIdService, createProjectService, upd
 import {
     connectProjectGithubRepoService,
     getProjectGithubRepoService,
-    syncGithubCollaboratorsService
+    syncGithubCollaboratorsService,
+    publishProjectGithubReleaseService
 } from './githubService.js';
 import {
     getProjectPlanningService,
@@ -84,6 +85,12 @@ export const syncGithubCollaboratorsController = handleAsync(async (req, res) =>
     const projectId = parseId(req.params.id);
     const result = await syncGithubCollaboratorsService(projectId, req.user?.userId);
     res.json(result);
+});
+
+export const publishProjectGithubReleaseController = handleAsync(async (req, res) => {
+    const projectId = parseId(req.params.id);
+    const result = await publishProjectGithubReleaseService(projectId, req.body || {}, req.user?.userId);
+    res.status(201).json(result);
 });
 
 export const getProjectPlanningController = handleAsync(async (req, res) => {
