@@ -22,24 +22,9 @@
                 </p>
                 <div class="mt-4 rounded-md border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-700/40">
                     <p class="text-sm font-semibold text-gray-700 dark:text-gray-200">Timepris for prosjekt</p>
-                    <div class="mt-2 flex flex-wrap items-center gap-2">
-                        <input
-                            v-model="hourlyRateInput"
-                            type="number"
-                            min="1"
-                            placeholder="Kr per time"
-                            class="w-44 rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                        />
-                        <button
-                            class="rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-                            :disabled="savingHourlyRate || !canSaveHourlyRate"
-                            @click="saveHourlyRate"
-                        >
-                            {{ savingHourlyRate ? 'Lagrer...' : 'Lagre timepris' }}
-                        </button>
-                    </div>
                     <p v-if="projectHourlyRate" class="mt-2 text-xs text-gray-600 dark:text-gray-300">Aktiv timepris: {{ formatCurrency(projectHourlyRate) }} / time</p>
-                    <p v-else class="mt-2 text-xs text-amber-700 dark:text-amber-300">Sett timepris for å følge prosjektkostnad fra tidslogging.</p>
+                    <p v-else class="mt-2 text-xs text-amber-700 dark:text-amber-300">Sett timepris på prosjektet for å følge prosjektkostnad fra tidslogging.</p>
+                    <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Timepris administreres på prosjektsiden, ikke på funksjonen eller oppgaven.</p>
                 </div>
                 <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
                     <div class="rounded-md bg-gray-100 dark:bg-gray-700/60 px-3 py-2">
@@ -82,12 +67,12 @@
                             class="rounded-md bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-700 px-3 py-2">
                             <p class="font-medium text-gray-800 dark:text-gray-100">{{ item.title }}</p>
                             <div class="mt-1 grid grid-cols-1 md:grid-cols-3 gap-1 text-xs">
-                                <p class="text-gray-600 dark:text-gray-300">Estimert: <span class="font-semibold">{{ item.estimatedHours }}t</span></p>
-                                <p class="text-gray-600 dark:text-gray-300">Logget: <span class="font-semibold">{{ item.loggedHours }}t</span></p>
+                                <p class="text-gray-600 dark:text-gray-300">Estimert: <span class="font-semibold">{{ item.estimatedHours }} t</span></p>
+                                <p class="text-gray-600 dark:text-gray-300">Logget: <span class="font-semibold">{{ item.loggedHours }} t</span></p>
                                 <p :class="item.isOver
                                     ? 'text-red-700 dark:text-red-300'
                                     : 'text-green-700 dark:text-green-300'">
-                                    {{ item.varianceLabel }}: <span class="font-semibold">{{ item.varianceHours }}t</span>
+                                    {{ item.varianceLabel }}: <span class="font-semibold">{{ item.varianceHours }} t</span>
                                 </p>
                             </div>
                             <div v-if="projectHourlyRate" class="mt-2 grid grid-cols-1 md:grid-cols-3 gap-1 text-xs">
@@ -176,10 +161,12 @@ const featureId = Number(route.params.featureId)
 const projectStore = useProjectsStore()
 
 const showModal = ref(false)
-const hourlyRateInput = ref('')
-const savingHourlyRate = ref(false)
 const webhookRefreshMs = 8000
 let refreshIntervalId = null
+const hoursFormatter = new Intl.NumberFormat('no-NO', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+})
 
 const tasks = computed(() => tasksStore.tasks)
 const feature = computed(() => tasks.value[0]?.feature ?? null)
@@ -197,16 +184,6 @@ const featuresPath = computed(() => {
     return Number.isInteger(projectId) && projectId > 0 ? `/project/${projectId}` : ''
 })
 
-const canSaveHourlyRate = computed(() => {
-    const trimmed = String(hourlyRateInput.value ?? '').trim()
-    if (!trimmed) {
-        return false
-    }
-
-    const parsed = Number(trimmed)
-    return Number.isInteger(parsed) && parsed > 0
-})
-
 const totalEstimatedMinutes = computed(() =>
     tasks.value.reduce((sum, task) => sum + ((Number(task.estimatedHours) || 0) * 60), 0)
 )
@@ -216,10 +193,18 @@ const totalLoggedMinutes = computed(() =>
         return taskSum + taskMinutes
     }, 0)
 )
-const totalEstimatedHours = computed(() => (totalEstimatedMinutes.value / 60).toFixed(2))
-const totalLoggedHours = computed(() => (totalLoggedMinutes.value / 60).toFixed(2))
+const formatHours = (value) => {
+    const parsed = Number(value)
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+        return '0'
+    }
+
+    return hoursFormatter.format(parsed)
+}
+const totalEstimatedHours = computed(() => formatHours(totalEstimatedMinutes.value / 60))
+const totalLoggedHours = computed(() => formatHours(totalLoggedMinutes.value / 60))
 const totalVarianceMinutes = computed(() => totalLoggedMinutes.value - totalEstimatedMinutes.value)
-const totalVarianceHours = computed(() => (Math.abs(totalVarianceMinutes.value) / 60).toFixed(2))
+const totalVarianceHours = computed(() => formatHours(Math.abs(totalVarianceMinutes.value) / 60))
 const totalVarianceLabel = computed(() => (totalVarianceMinutes.value > 0 ? 'Over estimat' : 'Gjenstar'))
 const estimatedCost = computed(() => ((projectHourlyRate.value || 0) * totalEstimatedMinutes.value) / 60)
 const loggedCost = computed(() => ((projectHourlyRate.value || 0) * totalLoggedMinutes.value) / 60)
@@ -235,9 +220,9 @@ const taskTimeSummaries = computed(() =>
         return {
             id: task.id,
             title: task.title,
-            estimatedHours: (estimatedMinutes / 60).toFixed(2),
-            loggedHours: (loggedMinutes / 60).toFixed(2),
-            varianceHours: (Math.abs(varianceMinutes) / 60).toFixed(2),
+            estimatedHours: formatHours(estimatedMinutes / 60),
+            loggedHours: formatHours(loggedMinutes / 60),
+            varianceHours: formatHours(Math.abs(varianceMinutes) / 60),
             varianceLabel: varianceMinutes > 0 ? 'Over estimat' : 'Gjenstar',
             isOver: varianceMinutes > 0,
             estimatedCost: (hourlyRate * estimatedMinutes) / 60,
@@ -279,14 +264,6 @@ onMounted(async () => {
     }, webhookRefreshMs)
 })
 
-watch(
-    () => projectStore.project?.hourlyRate,
-    (value) => {
-        hourlyRateInput.value = value ? String(value) : ''
-    },
-    { immediate: true }
-)
-
 onUnmounted(() => {
     if (refreshIntervalId) {
         clearInterval(refreshIntervalId)
@@ -311,6 +288,7 @@ const goToFeatures = () => {
 
 const createTask = async (task) => {
     await tasksStore.createTask(featureId, task)
+    await tasksStore.fetchTasks(featureId)
     showModal.value = false
         const projectId = Number(route.query.projectId || feature.value?.projectId)
         if (projectId > 0) {
@@ -373,26 +351,6 @@ const deleteTask = async (task) => {
     const projectId = Number(route.query.projectId || feature.value?.projectId)
     if (projectId > 0) {
         await projectStore.fetchProjectById(projectId)
-    }
-}
-
-const saveHourlyRate = async () => {
-    const projectId = Number(route.query.projectId || feature.value?.projectId)
-    if (!projectId || !canSaveHourlyRate.value) {
-        return
-    }
-
-    savingHourlyRate.value = true
-    try {
-        const parsedRate = Number(hourlyRateInput.value)
-        const updated = await projectStore.updateProject(projectId, { hourlyRate: parsedRate })
-        if (!updated) {
-            return
-        }
-
-        await projectStore.fetchProjectById(projectId)
-    } finally {
-        savingHourlyRate.value = false
     }
 }
 

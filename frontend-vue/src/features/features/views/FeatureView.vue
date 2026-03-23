@@ -15,6 +15,48 @@
             </div>
 
             <div v-if="project" class="rounded border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+                <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Prosjektpris</h3>
+                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Timepris og tilbudspris gjelder hele prosjektet og brukes i kostnads- og lønnsomhetsberegninger.</p>
+                <div class="mt-3 grid gap-3 md:grid-cols-2">
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Timepris (kr/time)</label>
+                        <input
+                            v-model="hourlyRateInput"
+                            type="number"
+                            min="1"
+                            placeholder="Kr per time"
+                            class="w-full rounded border border-gray-300 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                        />
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Tilbudspris (kr)</label>
+                        <input
+                            v-model="offerPriceInput"
+                            type="number"
+                            min="1"
+                            placeholder="Totalt tilbud"
+                            class="w-full rounded border border-gray-300 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                        />
+                    </div>
+                </div>
+                <div class="mt-3 flex flex-wrap items-center gap-2">
+                    <button
+                        @click="saveProjectPricing"
+                        :disabled="savingPricing || !canSavePricing"
+                        class="rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        {{ savingPricing ? 'Lagrer...' : 'Lagre priser' }}
+                    </button>
+                </div>
+                <div class="mt-2 flex flex-wrap gap-3 text-xs">
+                    <p v-if="projectHourlyRate" class="text-gray-600 dark:text-gray-300">Aktiv timepris: {{ formatCurrency(projectHourlyRate) }} / time</p>
+                    <p v-else class="text-amber-700 dark:text-amber-300">Ingen timepris satt på prosjektet ennå.</p>
+                    <p v-if="projectOfferPrice" class="text-gray-600 dark:text-gray-300">Aktiv tilbudspris: {{ formatCurrency(projectOfferPrice) }}</p>
+                    <p v-else class="text-amber-700 dark:text-amber-300">Ingen tilbudspris satt på prosjektet ennå.</p>
+                </div>
+            </div>
+
+            <div v-if="project" class="rounded border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
                 <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">GitHub Repo</h3>
                 <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ githubRepoText }}</p>
                 <div class="mt-3 flex flex-wrap items-center gap-2">
@@ -156,11 +198,49 @@ const releaseName = ref('')
 const releaseNotes = ref('')
 const isPrerelease = ref(false)
 const generateReleaseNotes = ref(true)
+const hourlyRateInput = ref('')
+const offerPriceInput = ref('')
+const savingPricing = ref(false)
 
 const project = computed(() => projectStore.project)
 const allTechnologies = computed(() => technoStore.technologies)
 const projectFeatures = computed(() => (project.value?.features || []).filter((feature) => feature && feature.id != null))
 const modules = computed(() => moduleStore.modules || [])
+const projectHourlyRate = computed(() => {
+    const value = Number(project.value?.hourlyRate)
+    if (!Number.isFinite(value) || value <= 0) {
+        return null
+    }
+
+    return value
+})
+const projectOfferPrice = computed(() => {
+    const value = Number(project.value?.offerPrice)
+    if (!Number.isFinite(value) || value <= 0) {
+        return null
+    }
+
+    return value
+})
+const hasValidPricingInput = (value) => {
+    const trimmed = String(value ?? '').trim()
+    if (!trimmed) {
+        return true
+    }
+
+    const parsed = Number(trimmed)
+    return Number.isInteger(parsed) && parsed > 0
+}
+const canSavePricing = computed(() => {
+    const hourlyChanged = String(hourlyRateInput.value ?? '') !== String(project.value?.hourlyRate ?? '')
+    const offerChanged = String(offerPriceInput.value ?? '') !== String(project.value?.offerPrice ?? '')
+
+    if (!hourlyChanged && !offerChanged) {
+        return false
+    }
+
+    return hasValidPricingInput(hourlyRateInput.value) && hasValidPricingInput(offerPriceInput.value)
+})
 
 const githubRepoText = computed(() => {
     if (!project.value?.githubOwner || !project.value?.githubRepoName) {
@@ -248,6 +328,22 @@ watch(
     { immediate: true }
 )
 
+watch(
+    () => project.value?.hourlyRate,
+    (value) => {
+        hourlyRateInput.value = value ? String(value) : ''
+    },
+    { immediate: true }
+)
+
+watch(
+    () => project.value?.offerPrice,
+    (value) => {
+        offerPriceInput.value = value ? String(value) : ''
+    },
+    { immediate: true }
+)
+
 const handleCreate = async (feature) => {
     const created = await projectStore.createProjectFeature(project.value.id, feature)
     if (!created) {
@@ -294,6 +390,28 @@ const handleDelete = async (feature) => {
 
     await projectStore.deleteProjectFeature(project.value.id, feature.id)
     await projectStore.fetchProjectById(project.value.id)
+}
+
+const saveProjectPricing = async () => {
+    const projectId = Number(project.value?.id)
+    if (!projectId || !canSavePricing.value) {
+        return
+    }
+
+    savingPricing.value = true
+    try {
+        const updated = await projectStore.updateProject(projectId, {
+            hourlyRate: hourlyRateInput.value === '' ? null : Number(hourlyRateInput.value),
+            offerPrice: offerPriceInput.value === '' ? null : Number(offerPriceInput.value)
+        })
+        if (!updated) {
+            return
+        }
+
+        await projectStore.fetchProjectById(projectId)
+    } finally {
+        savingPricing.value = false
+    }
 }
 
 const connectGithubRepo = async () => {
@@ -348,5 +466,11 @@ const publishRelease = async () => {
     releaseName.value = ''
     releaseNotes.value = ''
 }
+
+const formatCurrency = (value) => new Intl.NumberFormat('no-NO', {
+    style: 'currency',
+    currency: 'NOK',
+    maximumFractionDigits: 0
+}).format(Number(value) || 0)
 
 </script>

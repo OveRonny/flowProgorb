@@ -14,8 +14,8 @@
     <!-- Task info -->
     <div class="text-xs text-gray-500 dark:text-gray-400 mt-2 space-y-1">
 
-      <div v-if="task.estimatedHours">
-        ⏱ Estimert: <span class="font-medium">{{ task.estimatedHours }}h</span>
+      <div v-if="hasEstimatedHours">
+        ⏱ Estimert: <span class="font-medium">{{ formatHours(task.estimatedHours) }} t</span>
       </div>
 
       <div v-if="task.completedAt">
@@ -30,7 +30,7 @@
         <span class="font-medium">{{ totalLoggedHours }} timer</span>
       </div>
 
-      <div v-if="task.estimatedHours">
+      <div v-if="hasEstimatedHours">
         📊 {{ varianceLabel }}:
         <span class="font-medium">{{ varianceHours }} timer</span>
       </div>
@@ -174,17 +174,29 @@ const varianceMinutes = computed(() => totalLoggedMinutes.value - estimatedMinut
 const varianceHours = computed(() => minutesToHoursLabel(Math.abs(varianceMinutes.value)))
 const varianceLabel = computed(() => (varianceMinutes.value > 0 ? 'Over estimat' : 'Gjenstår'))
 const canEditTimeLogs = computed(() => props.task?.status === 'IN_PROGRESS')
+const hasEstimatedHours = computed(() => props.task?.estimatedHours !== null && props.task?.estimatedHours !== undefined && props.task?.estimatedHours !== '')
+
+const hoursFormatter = new Intl.NumberFormat('no-NO', {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2
+})
+
+const formatHours = (value) => {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed) || parsed <= 0) return '0'
+  return hoursFormatter.format(parsed)
+}
 
 const minutesToHoursLabel = (minutes) => {
   const value = Number(minutes)
-  if (!Number.isFinite(value) || value <= 0) return '0.00'
-  return (value / 60).toFixed(2)
+  if (!Number.isFinite(value) || value <= 0) return '0'
+  return formatHours(value / 60)
 }
 
 const newHoursLabel = computed(() => {
   const minutes = Number(newMinutes.value)
   if (!Number.isFinite(minutes) || minutes <= 0) return ''
-  return (minutes / 60).toFixed(2)
+  return formatHours(minutes / 60)
 })
 
 const newMinutes = ref('')

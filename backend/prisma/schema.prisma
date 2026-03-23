@@ -190,7 +190,7 @@ model Task {
   title          String
   description    String?
   status         TaskStatus @default(PENDING)
-  estimatedHours Int?
+  estimatedHours Float?
   completedAt    DateTime?
   assignedTo     User? @relation(fields: [assignedToId], references: [id])
   assignedToId   Int?

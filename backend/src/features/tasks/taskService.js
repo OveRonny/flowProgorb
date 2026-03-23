@@ -3,6 +3,25 @@ import { calculateTaskCollectionProgress } from '../helpers/progress.js';
 
 const TASK_STATUSES = ['PENDING', 'IN_PROGRESS', 'DONE'];
 
+function normalizeEstimatedHours(value) {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (value === null || value === '') {
+    return null;
+  }
+
+  const normalized = Number(value);
+  if (!Number.isFinite(normalized) || normalized < 0) {
+    const error = new Error('estimatedHours must be a number greater than or equal to 0');
+    error.status = 400;
+    throw error;
+  }
+
+  return normalized;
+}
+
 const projectMembershipFilter = (userId) => ({
   feature: {
     project: {
@@ -88,7 +107,7 @@ export async function createTaskService(featureId, data, userId) {
       title,
       description: description ?? null,
       status: status ?? 'PENDING',
-      estimatedHours,
+      estimatedHours: normalizeEstimatedHours(estimatedHours),
       orderIndex
     },
     include: { feature: true, timeLogs: true }
@@ -123,7 +142,7 @@ export async function updateTaskService(featureId, taskId, data, userId) {
       title: data.title,
       description: data.description,
       status: data.status,
-      estimatedHours: data.estimatedHours,
+      estimatedHours: normalizeEstimatedHours(data.estimatedHours),
       orderIndex: data.orderIndex,
       completedAt: data.status === 'DONE' ? new Date() : data.status ? null : undefined
     },
