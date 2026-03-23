@@ -265,6 +265,24 @@
             <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Timepriser</h2>
           </div>
 
+          <div class="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-900/40">
+            <div class="mb-2 flex items-center justify-between">
+              <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">Prisoversikt</h3>
+              <span class="text-xs text-gray-500 dark:text-gray-400">Valgt prosjekt</span>
+            </div>
+            <div class="grid gap-3 sm:grid-cols-2">
+              <div class="rounded-md border border-sky-100 bg-sky-50 p-3 dark:border-sky-900/40 dark:bg-sky-900/20">
+                <p class="text-xs font-semibold text-sky-700 dark:text-sky-300">Tilbudspris</p>
+                <p class="mt-1 text-lg font-bold text-sky-800 dark:text-sky-200">{{ projectOfferPrice ? formatCurrency(projectOfferPrice) : 'Ikke satt' }}</p>
+              </div>
+              <div class="rounded-md border border-cyan-100 bg-cyan-50 p-3 dark:border-cyan-900/40 dark:bg-cyan-900/20">
+                <p class="text-xs font-semibold text-cyan-700 dark:text-cyan-300">Prosjektpris</p>
+                <p class="mt-1 text-lg font-bold text-cyan-800 dark:text-cyan-200">{{ projectOfferPrice ? formatCurrency(projectOfferPrice) : 'Ikke satt' }}</p>
+              </div>
+            </div>
+            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">I dagens oppsett lagres tilbudspris og prosjektpris i samme prosjektfelt.</p>
+          </div>
+
           <div v-if="projectHourlyRate" class="grid gap-3 sm:grid-cols-2">
             <div class="rounded-md border border-blue-100 bg-blue-50 p-3 dark:border-blue-900/40 dark:bg-blue-900/20">
               <p class="text-xs font-semibold text-blue-700 dark:text-blue-300">Timepris</p>
@@ -295,11 +313,11 @@
 
             <template v-if="projectOfferPrice">
               <div class="rounded-md border border-sky-100 bg-sky-50 p-3 dark:border-sky-900/40 dark:bg-sky-900/20">
-                <p class="text-xs font-semibold text-sky-700 dark:text-sky-300">Tilbudspris</p>
+                <p class="text-xs font-semibold text-sky-700 dark:text-sky-300">Prosjektpris</p>
                 <p class="mt-1 text-lg font-bold text-sky-800 dark:text-sky-200">{{ formatCurrency(projectOfferPrice) }}</p>
               </div>
               <div class="rounded-md border border-cyan-100 bg-cyan-50 p-3 dark:border-cyan-900/40 dark:bg-cyan-900/20">
-                <p class="text-xs font-semibold text-cyan-700 dark:text-cyan-300">Brukt av tilbud</p>
+                <p class="text-xs font-semibold text-cyan-700 dark:text-cyan-300">Brukt av prosjektpris</p>
                 <p class="mt-1 text-lg font-bold text-cyan-800 dark:text-cyan-200">{{ offerUsage.usedPercent.toFixed(1) }}%</p>
                 <p class="mt-1 text-xs text-cyan-700/80 dark:text-cyan-300/80">{{ formatCurrency(offerUsage.usedCost) }}</p>
               </div>
@@ -309,7 +327,7 @@
                 <p class="text-xs font-semibold" :class="offerUsage.remainingCost >= 0
                   ? 'text-emerald-700 dark:text-emerald-300'
                   : 'text-red-700 dark:text-red-300'">
-                  {{ offerUsage.remainingCost >= 0 ? 'Gjenstår av tilbud' : 'Over tilbud' }}
+                  {{ offerUsage.remainingCost >= 0 ? 'Gjenstår av prosjektpris' : 'Over prosjektpris' }}
                 </p>
                 <p class="mt-1 text-lg font-bold" :class="offerUsage.remainingCost >= 0
                   ? 'text-emerald-800 dark:text-emerald-200'
@@ -323,7 +341,7 @@
             Sett timepris på prosjektet for å følge prosjektkostnad fra tidslogging.
           </p>
           <p v-if="projectHourlyRate && !projectOfferPrice" class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700 dark:border-blue-900/40 dark:bg-blue-900/20 dark:text-blue-300">
-            Legg til tilbudspris på prosjektet for å se hvor mye av tilbudet som er brukt.
+            Legg til prosjektpris på prosjektet for å se hvor mye av prosjektprisen som er brukt.
           </p>
         </section>
 
@@ -416,7 +434,7 @@
                     project.status === 'PLANNED' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' :
                     'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
                   ]">
-                    {{ project.status }}
+                    {{ projectStatusLabel(project.status) }}
                   </span>
                 </router-link>
               </div>
@@ -724,6 +742,16 @@ function taskStatusLabel(status) {
     PENDING: 'Å gjøre',
     IN_PROGRESS: 'Under arbeid',
     DONE: 'Ferdig'
+  }
+  return labels[status] || status
+}
+
+function projectStatusLabel(status) {
+  const labels = {
+    PLANNED: 'Planlagt',
+    ACTIVE: 'Aktiv',
+    COMPLETED: 'Fullført',
+    ON_HOLD: 'På vent'
   }
   return labels[status] || status
 }

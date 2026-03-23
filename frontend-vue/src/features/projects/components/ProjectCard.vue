@@ -39,7 +39,7 @@
                 </p>
             </div>
             <div class="rounded-md border border-sky-100 bg-sky-50 px-3 py-2 dark:border-sky-900/40 dark:bg-sky-900/20">
-                <p class="text-xs font-semibold text-sky-700 dark:text-sky-300">Tilbudspris</p>
+                <p class="text-xs font-semibold text-sky-700 dark:text-sky-300">Prosjektpris</p>
                 <p class="mt-1 font-semibold text-gray-800 dark:text-gray-100">
                     {{ projectOfferPrice ? formatCurrency(projectOfferPrice) : 'Ikke satt' }}
                 </p>

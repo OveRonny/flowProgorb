@@ -53,7 +53,7 @@
                 class="flex items-center justify-between rounded bg-gray-50 p-2 hover:bg-blue-50 dark:bg-gray-700 dark:hover:bg-blue-900/20"
               >
                 <span class="text-sm text-gray-900 dark:text-gray-100">{{ requirement.title }}</span>
-                <span class="rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-700 dark:bg-gray-600 dark:text-gray-300">{{ requirement.status }}</span>
+                <span class="rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-700 dark:bg-gray-600 dark:text-gray-300">{{ requirementStatusLabel(requirement.status) }}</span>
               </router-link>
             </li>
           </ul>
@@ -106,6 +106,17 @@ watch([projectId, meetingId], () => {
 
 function startEdit() {
   showEditModal.value = true
+}
+
+function requirementStatusLabel(status) {
+  const labels = {
+    OPEN: 'Åpen',
+    APPROVED: 'Godkjent',
+    IMPLEMENTED: 'Implementert',
+    REJECTED: 'Avvist'
+  }
+
+  return labels[status] || status
 }
 
 async function handleUpdate(payload) {

@@ -59,10 +59,11 @@
               <span class="font-semibold text-gray-900 dark:text-gray-100">{{ version.versionTag }}</span>
               <span v-if="version.name" class="text-gray-600 dark:text-gray-400">{{ version.name }}</span>
               <span class="rounded bg-gray-100 px-2 py-0.5 text-xs dark:bg-gray-700">{{ channelLabel(version.channel) }}</span>
-              <span class="rounded bg-blue-100 px-2 py-0.5 text-xs text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">{{ version.status }}</span>
+              <span class="rounded bg-blue-100 px-2 py-0.5 text-xs text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">{{ versionStatusLabel(version.status) }}</span>
             </div>
             <div class="flex items-center gap-2">
               <button
+                v-if="version.status === 'PLANNED'"
                 class="rounded bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-emerald-700"
                 @click="markVersionApproved(version.id)"
               >
@@ -105,6 +106,43 @@
           <p v-if="hourlyRate" class="rounded bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
             Timepris: {{ formatCurrency(hourlyRate) }} / time
           </p>
+        </div>
+
+        <div class="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-900/40">
+          <div class="grid gap-3 md:grid-cols-3">
+            <label class="space-y-1">
+              <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Prosjekt timepris (kr/time)</span>
+              <input
+                v-model="pricingInputs.hourlyRate"
+                type="number"
+                min="0"
+                step="1"
+                placeholder="F.eks. 1250"
+                class="w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+              />
+            </label>
+            <label class="space-y-1">
+              <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Prosjektpris (kr)</span>
+              <input
+                v-model="pricingInputs.offerPrice"
+                type="number"
+                min="0"
+                step="1000"
+                placeholder="F.eks. 350000"
+                class="w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+              />
+            </label>
+            <div class="flex items-end">
+              <button
+                class="w-full rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                :disabled="savingPricing || !canSavePricing"
+                @click="saveProjectPricing"
+              >
+                {{ savingPricing ? 'Lagrer...' : 'Lagre prosjektpriser' }}
+              </button>
+            </div>
+          </div>
+          <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Prisene lagres på prosjektet og brukes i kalkulatoren under.</p>
         </div>
 
         <p v-if="!hourlyRate" class="mb-4 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-300">
@@ -447,6 +485,11 @@ const showEmailModal = ref(false)
 const selectedOfferVersionId = ref('ALL')
 const requirementSortMode = ref('VERSION_ASC')
 const selectedRequirementVersionId = ref('ALL')
+const pricingInputs = ref({
+  hourlyRate: '',
+  offerPrice: ''
+})
+const savingPricing = ref(false)
 
 const project = computed(() => projectStore.planningProject)
 const requirements = computed(() => project.value?.requirements || [])
@@ -504,6 +547,30 @@ const hourlyRate = computed(() => {
   }
 
   return rate
+})
+const canSavePricing = computed(() => {
+  if (!project.value?.id) {
+    return false
+  }
+
+  const normalizeInput = (value) => {
+    const trimmed = String(value ?? '').trim()
+    return trimmed === '' ? null : Number(trimmed)
+  }
+
+  const nextHourlyRate = normalizeInput(pricingInputs.value.hourlyRate)
+  const nextOfferPrice = normalizeInput(pricingInputs.value.offerPrice)
+
+  const hasInvalidHourlyRate = nextHourlyRate !== null && (!Number.isFinite(nextHourlyRate) || nextHourlyRate < 0)
+  const hasInvalidOfferPrice = nextOfferPrice !== null && (!Number.isFinite(nextOfferPrice) || nextOfferPrice < 0)
+  if (hasInvalidHourlyRate || hasInvalidOfferPrice) {
+    return false
+  }
+
+  const currentHourlyRate = project.value?.hourlyRate ?? null
+  const currentOfferPrice = project.value?.offerPrice ?? null
+
+  return nextHourlyRate !== currentHourlyRate || nextOfferPrice !== currentOfferPrice
 })
 
 const costInputs = ref({
@@ -660,6 +727,17 @@ watch(
         marginPercent: 20,
         proposedPrice: ''
       }
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  () => [project.value?.hourlyRate, project.value?.offerPrice],
+  () => {
+    pricingInputs.value = {
+      hourlyRate: project.value?.hourlyRate ?? '',
+      offerPrice: project.value?.offerPrice ?? ''
     }
   },
   { immediate: true }
@@ -987,6 +1065,37 @@ const startProjectDevelopment = async () => {
   router.push({ name: 'Features', params: { id: project.value.id } })
 }
 
+const saveProjectPricing = async () => {
+  if (!project.value?.id || !canSavePricing.value) {
+    return
+  }
+
+  const parseValue = (value) => {
+    const trimmed = String(value ?? '').trim()
+    if (trimmed === '') {
+      return null
+    }
+
+    const parsed = Number(trimmed)
+    return Number.isFinite(parsed) ? parsed : null
+  }
+
+  savingPricing.value = true
+  try {
+    const updated = await projectStore.updateProject(project.value.id, {
+      hourlyRate: parseValue(pricingInputs.value.hourlyRate),
+      offerPrice: parseValue(pricingInputs.value.offerPrice)
+    })
+    if (!updated) {
+      return
+    }
+
+    await loadPlanning()
+  } finally {
+    savingPricing.value = false
+  }
+}
+
 const formatDate = (value) => {
   if (!value) {
     return 'Ikke satt'
@@ -1037,6 +1146,16 @@ const channelLabel = (channel) => {
   }
 
   return labels[channel] || channel
+}
+
+const versionStatusLabel = (status) => {
+  const labels = {
+    PLANNED: 'Planlagt',
+    APPROVED: 'Godkjent',
+    RELEASED: 'Lansert'
+  }
+
+  return labels[status] || status
 }
 
 const formatCurrency = (value) => {

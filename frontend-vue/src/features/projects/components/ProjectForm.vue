@@ -29,7 +29,7 @@
       />
     </div>
     <div>
-      <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Tilbudspris (kr)</label>
+      <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Prosjektpris (kr)</label>
       <input
         v-model="offerPrice"
         type="number"

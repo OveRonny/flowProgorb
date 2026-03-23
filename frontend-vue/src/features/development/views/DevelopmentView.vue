@@ -41,7 +41,7 @@
                 {{ (project.features || []).length }} funksjoner
               </span>
               <span class="inline-block rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                {{ project.status }}
+                {{ projectStatusLabel(project.status) }}
               </span>
             </div>
           </div>
@@ -60,6 +60,17 @@ const authStore = useProjectsStore()
 const projects = computed(() =>
   (authStore.projects || []).filter((project) => !['PLANNED', 'ON_HOLD'].includes(project.status))
 )
+
+function projectStatusLabel(status) {
+  const labels = {
+    PLANNED: 'Planlagt',
+    ACTIVE: 'Aktiv',
+    COMPLETED: 'Fullført',
+    ON_HOLD: 'På vent'
+  }
+
+  return labels[status] || status
+}
 
 authStore.fetchProjects()
 </script>

@@ -5,7 +5,7 @@
                 <h1 class="mb-2 text-2xl font-bold text-gray-800 dark:text-gray-200">{{ project.name }}</h1>
                 <p class="mb-2 text-gray-600 dark:text-gray-400">{{ project.description || 'Ingen beskrivelse' }}</p>
                 <p class="text-gray-600 dark:text-gray-400">
-                    Status: {{ project.status }} |
+                    Status: {{ projectStatusLabel(project.status) }} |
                     Frist: {{ project.deadline ? new Date(project.deadline).toLocaleDateString('no-NO') : 'Ikke satt' }}
                 </p>
                 <div class="mt-3 h-3 w-full rounded-full bg-gray-200 dark:bg-gray-700">
@@ -16,7 +16,7 @@
 
             <div v-if="project" class="rounded border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
                 <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Prosjektpris</h3>
-                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Timepris og tilbudspris gjelder hele prosjektet og brukes i kostnads- og lønnsomhetsberegninger.</p>
+                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Timepris og prosjektpris gjelder hele prosjektet og brukes i kostnads- og lønnsomhetsberegninger.</p>
                 <div class="mt-3 grid gap-3 md:grid-cols-2">
                     <div>
                         <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Timepris (kr/time)</label>
@@ -29,7 +29,7 @@
                         />
                     </div>
                     <div>
-                        <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Tilbudspris (kr)</label>
+                        <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Prosjektpris (kr)</label>
                         <input
                             v-model="offerPriceInput"
                             type="number"
@@ -51,8 +51,8 @@
                 <div class="mt-2 flex flex-wrap gap-3 text-xs">
                     <p v-if="projectHourlyRate" class="text-gray-600 dark:text-gray-300">Aktiv timepris: {{ formatCurrency(projectHourlyRate) }} / time</p>
                     <p v-else class="text-amber-700 dark:text-amber-300">Ingen timepris satt på prosjektet ennå.</p>
-                    <p v-if="projectOfferPrice" class="text-gray-600 dark:text-gray-300">Aktiv tilbudspris: {{ formatCurrency(projectOfferPrice) }}</p>
-                    <p v-else class="text-amber-700 dark:text-amber-300">Ingen tilbudspris satt på prosjektet ennå.</p>
+                    <p v-if="projectOfferPrice" class="text-gray-600 dark:text-gray-300">Aktiv prosjektpris: {{ formatCurrency(projectOfferPrice) }}</p>
+                    <p v-else class="text-amber-700 dark:text-amber-300">Ingen prosjektpris satt på prosjektet ennå.</p>
                 </div>
             </div>
 
@@ -286,6 +286,17 @@ const projectProgressPercent = computed(() => {
 
     return Number(project.value?.progress) || 0
 })
+
+const projectStatusLabel = (status) => {
+    const labels = {
+        PLANNED: 'Planlagt',
+        ACTIVE: 'Aktiv',
+        COMPLETED: 'Fullført',
+        ON_HOLD: 'På vent'
+    }
+
+    return labels[status] || status
+}
 
 const goToTasks = (featureId) => {
     router.push({ path: `/features/${featureId}/tasks`, query: { projectId: project.value?.id } })
